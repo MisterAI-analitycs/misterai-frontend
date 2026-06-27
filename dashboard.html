@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control - MisterAI</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Conservamos exactamente el fondo y el comportamiento de scroll del dashboard original */
+        body { 
+            background-color: #020617; 
+            background-image: radial-gradient(circle at 50% 50%, #042f1a 0%, #020617 80%);
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    </style>
+</head>
+<body class="text-slate-100 font-sans antialiased min-h-screen flex flex-col">
+
+    <header class="h-16 border-b border-slate-900 bg-slate-950 px-6 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-clipboard-list text-emerald-400 text-xl"></i>
+            <span class="text-md font-bold tracking-wide text-white">MisterAI <span class="text-xs text-emerald-400 font-medium px-1.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 ml-1">Cuerpo Técnico</span></span>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-xs text-slate-400 hidden sm:inline-block">Temporada 2026/2027</span>
+            <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-emerald-400">
+                Míster
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-4xl w-full mx-auto p-4 md:p-8 space-y-6">
+        
+        <section class="p-6 bg-slate-950/60 border border-slate-900 rounded-2xl shadow-xl space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xs font-bold text-slate-400 tracking-wider uppercase flex items-center gap-2">
+                    <i class="fa-solid fa-circle-plus text-emerald-400"></i> Analizar Nuevo Partido
+                </h3>
+            </div>
+            
+            <div id="drop-zone" class="border-2 border-dashed border-slate-800 hover:border-emerald-500/40 bg-slate-900/10 hover:bg-emerald-500/5 p-8 rounded-xl transition cursor-pointer flex flex-col items-center justify-center text-center gap-3 group relative overflow-hidden">
+                <input type="file" id="file-input" accept="video/*" class="absolute inset-0 opacity-0 cursor-pointer z-10" />
+                
+                <div class="w-12 h-12 rounded-full bg-slate-900 group-hover:bg-emerald-500/10 flex items-center justify-center border border-slate-800 group-hover:border-emerald-500/20 transition text-slate-400 group-hover:text-emerald-400">
+                    <i class="fa-solid fa-cloud-arrow-up text-lg transition-transform group-hover:-translate-y-0.5"></i>
+                </div>
+                
+                <div>
+                    <p class="text-xs font-semibold text-slate-200">Arrastra tu vídeo aquí o <span class="text-emerald-400 group-hover:underline">explora tus archivos</span></p>
+                    <p class="text-[10px] text-slate-500 mt-1">Formatos recomendados: MP4, MOV (Grabados desde el móvil o cámara)</p>
+                </div>
+            </div>
+
+            <div id="upload-details" class="hidden space-y-4 border-t border-slate-900 pt-4 animate-fadeIn">
+                
+                <div class="p-3 bg-slate-900/40 border border-slate-900 rounded-xl flex items-center gap-3">
+                    <i class="fa-solid fa-file-video text-lg text-emerald-400 shrink-0"></i>
+                    <div class="min-w-0 flex-1">
+                        <p id="original-filename" class="text-xs font-medium text-white truncate">video_partido.mp4</p>
+                        <p id="file-size" class="text-[10px] text-slate-500">0.0 MB</p>
+                    </div>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label for="match-name" class="text-[10px] font-bold tracking-wider uppercase text-slate-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-signature text-emerald-500"></i> Asignar nombre al partido
+                    </label>
+                    <input type="text" id="match-name" placeholder="Ej. Segunda Parte vs Algeciras CF" 
+                        class="w-full h-10 bg-slate-900 border border-slate-800 rounded-xl px-3.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition-all" />
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label for="match-type" class="text-[10px] font-bold tracking-wider uppercase text-slate-400">Modalidad</label>
+                        <select id="match-type" class="w-full h-10 bg-slate-900 border border-slate-800 rounded-xl px-3 text-xs text-white focus:outline-none focus:border-emerald-500 transition">
+                            <option value="Fútbol 11">Fútbol 11</option>
+                            <option value="Fútbol 7">Fútbol 7</option>
+                            <option value="Fútbol Sala">Fútbol Sala</option>
+                        </select>
+                    </div>
+                    
+                    <div class="flex items-end">
+                        <button id="btn-submit-analysis" class="w-full h-10 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 font-bold text-xs text-slate-950 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10 cursor-pointer">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Iniciar Análisis de IA
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="space-y-3">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xs font-bold text-slate-400 tracking-wider uppercase flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-emerald-400"></i> Partidos del Historial
+                </h3>
+            </div>
+
+            <div id="matches-container" class="space-y-2">
+                
+                <a href="analizar.html?id=demo-match" class="flex items-center justify-between p-4 bg-slate-900/20 hover:bg-slate-900/60 border border-slate-900 hover:border-slate-800 rounded-xl transition group">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                            <i class="fa-solid fa-file-video"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="text-xs font-bold text-white group-hover:text-emerald-400 transition truncate">PSG_vs_Bayern_Champions_League_ANALYST.mp4</h4>
+                            <span class="text-[10px] text-slate-500 block mt-0.5">Procesado hace 2 horas &bull; Fútbol 11</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-xs text-slate-600 group-hover:text-white transition transform group-hover:translate-x-1 pl-2"></i>
+                </a>
+
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const uploadDetails = document.getElementById('upload-details');
+        const originalFilename = document.getElementById('original-filename');
+        const fileSize = document.getElementById('file-size');
+        const matchNameInput = document.getElementById('match-name');
+        const matchTypeSelect = document.getElementById('match-type');
+        const btnSubmitAnalysis = document.getElementById('btn-submit-analysis');
+        const matchesContainer = document.getElementById('matches-container');
+
+        // Efecto visual al arrastrar archivos sobre la zona táctica
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-emerald-400', 'bg-emerald-500/10');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-emerald-400', 'bg-emerald-500/10');
+            }, false);
+        });
+
+        // Capturar archivo por selección o por arrastre
+        fileInput.addEventListener('change', handleFileSetup);
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSetup();
+            }
+        });
+
+        function handleFileSetup() {
+            const file = fileInput.files[0];
+            if (file) {
+                // Hacer visible el panel de personalización
+                uploadDetails.classList.remove('hidden');
+                
+                // Cargar metadatos reales del archivo
+                originalFilename.innerText = file.name;
+                fileSize.innerText = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
+                
+                // Formatear automáticamente un nombre limpio en el input (removiendo guiones y extensión)
+                const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+                matchNameInput.value = baseName.replace(/[-_]/g, ' ');
+                
+                // Foco automático para que puedas renombrarlo directamente
+                matchNameInput.focus();
+            }
+        }
+
+        // Simulación de subida e inserción dinámica en la lista conservada
+        btnSubmitAnalysis.addEventListener('click', () => {
+            const finalName = matchNameInput.value.trim() || originalFilename.innerText;
+            const matchType = matchTypeSelect.value;
+
+            if (!fileInput.files[0]) return;
+
+            // Creamos la nueva fila imitando al 100% el diseño original premium
+            const newMatchId = 'match-' + Date.now();
+            const cardHTML = `
+                <a href="analizar.html?id=${newMatchId}" class="flex items-center justify-between p-4 bg-slate-900/40 border border-emerald-500/20 rounded-xl transition group animate-fadeIn">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 relative">
+                            <i class="fa-solid fa-circle-notch animate-spin text-[10px] absolute"></i>
+                            <i class="fa-solid fa-file-video opacity-15"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="text-xs font-bold text-emerald-400 truncate">${finalName}</h4>
+                            <span class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                                <span class="text-amber-400 font-medium flex items-center gap-1"><i class="fa-solid fa-spinner animate-spin text-[8px]"></i> Procesando video...</span>
+                                <span class="text-slate-700">&bull;</span>
+                                <span>${matchType}</span>
+                            </span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-xs text-slate-600 group-hover:text-white transition transform group-hover:translate-x-1 pl-2"></i>
+                </a>
+            `;
+
+            // Insertar el nuevo partido al principio de tu contenedor existente
+            matchesContainer.insertAdjacentHTML('afterbegin', cardHTML);
+            
+            // Ocultar y limpiar el formulario para la próxima carga
+            uploadDetails.classList.add('hidden');
+            fileInput.value = '';
+        });
+    </script>
+
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(3px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.25s ease forwards;
+        }
+    </style>
+</body>
+</html>

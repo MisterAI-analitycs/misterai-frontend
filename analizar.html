@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis Táctico Avanzado - MisterAI (DEMO)</title>
+    <!-- Tailwind CSS v4 -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #020617; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #10b981; }
+    </style>
+</head>
+<body class="text-slate-100 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- CONTENEDOR PRINCIPAL INTERFAZ DE ANÁLISIS -->
+    <div id="analysis-layout" class="flex flex-col h-screen overflow-hidden">
+        
+        <!-- HEADER DE NAVEGACIÓN Y CONTROL -->
+        <header class="h-16 border-b border-slate-900 px-6 flex items-center justify-between bg-slate-950 shrink-0 z-10">
+            <div class="flex items-center gap-4">
+                <a href="dashboard.html" class="text-slate-400 hover:text-white transition flex items-center gap-2 text-sm bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800">
+                    <i class="fa-solid fa-arrow-left text-xs"></i> Volver al Panel
+                </a>
+                <div class="h-4 w-px bg-slate-800"></div>
+                <div>
+                    <h1 class="text-sm font-bold text-white leading-none">PSG_vs_Bayern_Champions_League_ANALYST.mp4</h1>
+                    <span class="text-[11px] text-emerald-400 font-semibold mt-1 block">Fútbol 11 - Vista de Pájaro</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <span class="text-xs bg-emerald-500/10 text-emerald-400 font-mono px-2.5 py-1 rounded-md border border-emerald-500/20 flex items-center gap-1.5">
+                    <i class="fa-solid fa-brain"></i> Telemetría Avanzada Activa
+                </span>
+            </div>
+        </header>
+
+        <!-- ZONA DE TRABAJO EN GRID -->
+        <div class="flex-grow flex flex-col lg:flex-row overflow-hidden w-full">
+            
+            <!-- COLUMNA IZQUIERDA: REPRODUCTOR Y VIDEOCLIPS -->
+            <div class="w-full lg:w-7/12 flex flex-col border-r border-slate-900 bg-slate-950/40 overflow-y-auto">
+                <div class="relative bg-black aspect-video w-full shadow-2xl border-b border-slate-900">
+                    <video id="main-video-player" class="w-full h-full object-contain" controls preload="auto">
+                        <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+                    </video>
+                    <div class="absolute top-3 left-3 bg-slate-950/80 px-2 py-1 text-[10px] text-slate-400 rounded border border-slate-800 pointer-events-none">
+                        <i class="fa-solid fa-video mr-1"></i> Vídeo de Test
+                    </div>
+                </div>
+
+                <!-- Lista de Cortes de Vídeo Automáticos -->
+                <div class="p-6 flex-grow flex flex-col">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-xs font-bold uppercase text-slate-400 tracking-wider">Eventos Detectados por IA</h3>
+                            <p class="text-[11px] text-slate-500">Haz clic en un corte para desplazar el metraje y mutar la analítica lateral.</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+                        <!-- Clip 1 -->
+                        <div onclick="seekVideoTo(10, 'high')" class="flex items-center justify-between p-3.5 bg-slate-900/60 hover:bg-emerald-500/10 rounded-xl border border-slate-800 hover:border-emerald-500/30 transition cursor-pointer group">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500 group-hover:text-slate-950 transition shrink-0"><i class="fa-solid fa-play text-xs pl-0.5"></i></div>
+                                <div class="truncate">
+                                    <h4 class="text-xs font-bold text-white group-hover:text-emerald-400 transition">Presión Tras Pérdida - Bloque Alto</h4>
+                                    <span class="text-[10px] text-slate-500 block">Fase de asedio en campo rival</span>
+                                </div>
+                            </div>
+                            <span class="text-xs font-mono font-bold text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-900">00:10</span>
+                        </div>
+
+                        <!-- Clip 2 -->
+                        <div onclick="seekVideoTo(25, 'mid')" class="flex items-center justify-between p-3.5 bg-slate-900/60 hover:bg-emerald-500/10 rounded-xl border border-slate-800 hover:border-emerald-500/30 transition cursor-pointer group">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500 group-hover:text-slate-950 transition shrink-0"><i class="fa-solid fa-play text-xs pl-0.5"></i></div>
+                                <div class="truncate">
+                                    <h4 class="text-xs font-bold text-white group-hover:text-emerald-400 transition">Transición Ofensiva Canal Central</h4>
+                                    <span class="text-[10px] text-slate-500 block">Construcción equilibrada en medular</span>
+                                </div>
+                            </div>
+                            <span class="text-xs font-mono font-bold text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-900">00:25</span>
+                        </div>
+
+                        <!-- Clip 3 -->
+                        <div onclick="seekVideoTo(45, 'low')" class="flex items-center justify-between p-3.5 bg-slate-900/60 hover:bg-emerald-500/10 rounded-xl border border-slate-800 hover:border-emerald-500/30 transition cursor-pointer group">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500 group-hover:text-slate-950 transition shrink-0"><i class="fa-solid fa-play text-xs pl-0.5"></i></div>
+                                <div class="truncate">
+                                    <h4 class="text-xs font-bold text-white group-hover:text-emerald-400 transition">Repliegue Crítico en Bloque Bajo</h4>
+                                    <span class="text-[10px] text-slate-500 block">Saturación del área propia</span>
+                                </div>
+                            </div>
+                            <span class="text-xs font-mono font-bold text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-900">00:45</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUMNA DERECHA: PIZARRA + NUEVA MATRIZ DE ESTADÍSTICAS EXTENSAS -->
+            <div class="w-full lg:w-5/12 flex flex-col bg-slate-950 overflow-y-auto p-6 space-y-6">
+                
+                <!-- SECCIÓN PIZARRA TÁCTICA -->
+                <div class="bg-slate-900/30 border border-slate-800/60 rounded-2xl p-4 flex flex-col">
+                    <div class="mb-3 flex justify-between items-center">
+                        <span class="text-xs font-bold uppercase text-slate-400 tracking-wider">Pizarra de Inferencia</span>
+                        <div class="flex bg-slate-950 p-1 rounded-lg border border-slate-800 text-[10px] font-semibold">
+                            <button onclick="switchTacticalView('heatmap')" id="btn-heatmap" class="px-2.5 py-1 rounded bg-emerald-500 text-slate-950 font-bold cursor-pointer">Calor</button>
+                            <button onclick="switchTacticalView('network')" id="btn-network" class="px-2.5 py-1 rounded text-slate-400 hover:text-white cursor-pointer">Red Pases</button>
+                        </div>
+                    </div>
+
+                    <div class="relative w-full aspect-[4/3] bg-emerald-950/20 border border-emerald-900/40 rounded-xl overflow-hidden">
+                        <!-- Campo de fútbol -->
+                        <div class="absolute inset-4 border border-white/10 flex items-center justify-center">
+                            <div class="absolute inset-y-0 left-0 w-1/4 border-r border-white/10"></div>
+                            <div class="absolute inset-y-0 right-0 w-1/4 border-l border-white/10"></div>
+                            <div class="w-16 h-16 rounded-full border border-white/10"></div>
+                            <div class="absolute inset-y-0 left-1/2 w-px bg-white/10"></div>
+                        </div>
+                        <div id="heatmap-layer" class="absolute inset-0 pointer-events-none transition-all duration-500">
+                            <div class="absolute w-20 h-20 bg-rose-500/40 rounded-full blur-xl" style="top: 15%; left: 60%;"></div>
+                        </div>
+                        <div id="network-layer" class="absolute inset-0 pointer-events-none transition-all duration-500 hidden"></div>
+                    </div>
+                </div>
+
+                <!-- NUEVA SECCIÓN: DASHBOARD DE MÉTRICAS MATRICIALES DE PARTIDO -->
+                <div class="bg-slate-900/30 border border-slate-800/60 rounded-2xl p-5 space-y-4">
+                    <h3 class="text-xs font-bold uppercase text-slate-400 tracking-wider">Métricas del Bloque Temporal</h3>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        
+                        <!-- Bloque Distribución -->
+                        <div class="bg-slate-950/60 border border-slate-900 p-3 rounded-xl space-y-2">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1">
+                                <i class="fa-solid fa-shuffle text-emerald-400"></i> Pase y Circulación
+                            </span>
+                            <div class="text-xs space-y-1">
+                                <div class="flex justify-between"><span class="text-slate-500">Totales:</span> <span class="font-mono font-bold text-white" id="m-pases-totales">124</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500">Buenos:</span> <span class="font-mono font-bold text-emerald-400" id="m-pases-buenos">108</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500">Interceptados:</span> <span class="font-mono font-bold text-rose-400" id="m-pases-int">16</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Bloque Ataque -->
+                        <div class="bg-slate-950/60 border border-slate-900 p-3 rounded-xl space-y-2">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1">
+                                <i class="fa-solid fa-crosshairs text-amber-500"></i> Finalización
+                            </span>
+                            <div class="text-xs space-y-1">
+                                <div class="flex justify-between"><span class="text-slate-500">Tiros:</span> <span class="font-mono font-bold text-white" id="m-tiros">4</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500">A puerta:</span> <span class="font-mono font-bold text-amber-400" id="m-tiros-puerta">2</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500">xG Tramo:</span> <span class="font-mono font-bold text-slate-400" id="m-xg">0.45</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Bloque Pérdidas por Zona -->
+                        <div class="bg-slate-950/60 border border-slate-900 p-3 rounded-xl space-y-2">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1">
+                                <i class="fa-solid fa-shield-halved text-rose-400"></i> Control Pérdidas
+                            </span>
+                            <div class="text-xs space-y-1">
+                                <div class="flex justify-between"><span class="text-slate-500">En Ntro. Campo:</span> <span class="font-mono font-bold text-rose-400" id="m-perdidas-propio">2</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500">En Su Campo:</span> <span class="font-mono font-bold text-slate-300" id="m-perdidas-rival">9</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500">Recuperaciones:</span> <span class="font-mono font-bold text-teal-400" id="m-recuperaciones">14</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Bloque Transición Dinámica -->
+                        <div class="bg-slate-950/60 border border-slate-900 p-3 rounded-xl space-y-2">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1">
+                                <i class="fa-solid fa-bolt text-sky-400"></i> Transiciones
+                            </span>
+                            <div class="text-xs space-y-1">
+                                <div class="flex justify-between"><span class="text-slate-500">Contras Hechas:</span> <span class="font-mono font-bold text-sky-400" id="m-contras-hechas">3</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500">Contras Sufridas:</span> <span class="font-mono font-bold text-amber-500" id="m-contras-recibidas">1</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500">PPDA Presión:</span> <span class="font-mono font-bold text-slate-400" id="m-ppda">8.4</span></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTROLADOR INTERACTIVO CON MOCK DATA COMPLETO -->
+    <script>
+        let activeView = 'heatmap';
+
+        const mockDataByClip = {
+            high: {
+                pTotales: "145", pBuenos: "128", pInt: "17",
+                tiros: "5", tirosPuerta: "3", xg: "0.68",
+                pPropio: "1", pRival: "14", rec: "18",
+                cHechas: "4", cRecibidas: "0", ppda: "6.2",
+                heatmap: `<div class="absolute w-24 h-24 bg-rose-500/40 rounded-full blur-xl" style="top: 15%; left: 65%;"></div>`,
+                network: `<svg class="w-full h-full text-emerald-400" viewBox="0 0 100 75"><line x1="50" y1="20" x2="75" y2="20" stroke="#10b981" stroke-width="2"/><circle cx="50" cy="20" r="3" fill="#020617" stroke="#10b981"/><circle cx="75" cy="20" r="3" fill="#020617" stroke="#10b981"/></svg>`
+            },
+            mid: {
+                pTotales: "98", pBuenos: "74", pInt: "24",
+                tiros: "2", tirosPuerta: "1", xg: "0.15",
+                pPropio: "4", pRival: "8", rec: "11",
+                cHechas: "2", cRecibidas: "2", ppda: "9.8",
+                heatmap: `<div class="absolute w-24 h-24 bg-amber-500/40 rounded-full blur-xl" style="top: 35%; left: 45%;"></div>`,
+                network: `<svg class="w-full h-full text-emerald-400" viewBox="0 0 100 75"><line x1="35" y1="37" x2="65" y2="37" stroke="#10b981" stroke-width="2"/><circle cx="35" cy="37" r="3" fill="#020617" stroke="#10b981"/><circle cx="65" cy="37" r="3" fill="#020617" stroke="#10b981"/></svg>`
+            },
+            low: {
+                pTotales: "64", pBuenos: "41", pInt: "23",
+                tiros: "0", tirosPuerta: "0", xg: "0.00",
+                pPropio: "9", pRival: "3", rec: "6",
+                cHechas: "1", cRecibidas: "4", ppda: "15.4",
+                heatmap: `<div class="absolute w-28 h-28 bg-rose-600/30 rounded-full blur-2xl" style="top: 40%; left: 15%;"></div>`,
+                network: `<svg class="w-full h-full text-emerald-400" viewBox="0 0 100 75"><line x1="15" y1="50" x2="25" y2="20" stroke="#10b981" stroke-width="2"/><circle cx="15" cy="50" r="3" fill="#020617" stroke="#10b981"/><circle cx="25" cy="20" r="3" fill="#020617" stroke="#10b981"/></svg>`
+            }
+        };
+
+        // Carga inicial
+        document.getElementById('network-layer').innerHTML = mockDataByClip.high.network;
+
+        function seekVideoTo(seconds, level) {
+            const video = document.getElementById('main-video-player');
+            if (video) { video.currentTime = seconds; video.play(); }
+
+            const data = mockDataByClip[level];
+            
+            // Inyección instantánea en la matriz de métricas extendida
+            document.getElementById('m-pases-totales').innerText = data.pTotales;
+            document.getElementById('m-pases-buenos').innerText = data.pBuenos;
+            document.getElementById('m-pases-int').innerText = data.pInt;
+            document.getElementById('m-tiros').innerText = data.tiros;
+            document.getElementById('m-tiros-puerta').innerText = data.tirosPuerta;
+            document.getElementById('m-xg').innerText = data.xg;
+            document.getElementById('m-perdidas-propio').innerText = data.pPropio;
+            document.getElementById('m-perdidas-rival').innerText = data.pRival;
+            document.getElementById('m-recuperaciones').innerText = data.rec;
+            document.getElementById('m-contras-hechas').innerText = data.cHechas;
+            document.getElementById('m-contras-recibidas').innerText = data.cRecibidas;
+            document.getElementById('m-ppda').innerText = data.ppda;
+
+            document.getElementById('heatmap-layer').innerHTML = data.heatmap;
+            document.getElementById('network-layer').innerHTML = data.network;
+        }
+
+        function switchTacticalView(view) {
+            activeView = view;
+            const btnHeatmap = document.getElementById('btn-heatmap');
+            const btnNetwork = document.getElementById('btn-network');
+            const layerHeatmap = document.getElementById('heatmap-layer');
+            const layerNetwork = document.getElementById('network-layer');
+
+            if (view === 'heatmap') {
+                btnHeatmap.className = "px-2.5 py-1 rounded bg-emerald-500 text-slate-950 font-bold cursor-pointer";
+                btnNetwork.className = "px-2.5 py-1 rounded text-slate-400 hover:text-white cursor-pointer";
+                layerHeatmap.classList.remove('hidden'); layerNetwork.classList.add('hidden');
+            } else {
+                btnHeatmap.className = "px-2.5 py-1 rounded text-slate-400 hover:text-white cursor-pointer";
+                btnNetwork.className = "px-2.5 py-1 rounded bg-emerald-500 text-slate-950 font-bold cursor-pointer";
+                layerHeatmap.classList.add('hidden'); layerNetwork.classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>

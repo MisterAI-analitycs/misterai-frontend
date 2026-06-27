@@ -216,3 +216,34 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ====================================================================
+# CONFIGURACIÓN PERSONALIZADA PARA MISTERAI (Vídeo e Inteligencia Artificial)
+# ====================================================================
+
+# Archivos de vídeo pesados (¡Crucial! No queremos subir partidos a GitHub)
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
+/videos_input/
+/videos_output/
+
+# Pesos y Modelos de IA (YOLOv8, RF-DETR, etc. - son gigantescos)
+*.pt
+*.pth
+*.onnx
+*.engine
+yolov8*.pt
+/models/
+/runs/
+
+# Basura del Sistema Operativo (Evita conflictos entre Mac y Windows)
+.DS_Store
+Thumbs.db
+*.local
+
+# Frontend y dependencias (Por si acaso usas librerías de diseño o Node en el futuro)
+node_modules/
+.eslintcache

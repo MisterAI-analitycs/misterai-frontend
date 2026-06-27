@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Míster - MisterAI</title>
+    <!-- Tailwind CSS v4 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Font Awesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Supabase JS Client CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Tu lógica de autenticación -->
+    <script src="auth.js"></script>
+    <style>
+        /* Fondo táctico sutil coherente con la Landing Page blindado contra fallos de carga */
+        html, body {
+            background-color: #020617 !important;
+            background-image: radial-gradient(circle at 50% 50%, #042f1a 0%, #020617 70%) !important;
+            background-attachment: fixed;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between text-slate-100 font-sans antialiased">
+
+    <!-- Botón Superior Izquierda para regresar -->
+    <div class="p-6">
+        <a href="index.html" class="inline-flex items-center text-sm text-slate-400 hover:text-emerald-400 transition gap-2 group">
+            <i class="fa-solid fa-arrow-left transition-transform group-hover:-translate-x-1"></i>
+            Volver a MisterAI
+        </a>
+    </div>
+
+    <!-- Contenedor Principal del Formulario -->
+    <main class="flex-grow flex items-center justify-center px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full bg-slate-900/60 border border-slate-800/80 p-8 rounded-2xl shadow-2xl backdrop-blur-md">
+            
+            <!-- Encabezado con Logo Táctico -->
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-3 text-xl">
+                    <i class="fa-solid fa-clipboard-list"></i>
+                </div>
+                <h2 class="text-2xl font-bold tracking-tight text-white">Mister<span class="text-emerald-400">AI</span></h2>
+                <p id="form-subtitle" class="text-sm text-slate-400 mt-2">Accede a tu pizarra táctica automatizada</p>
+            </div>
+
+            <!-- Selector de Pestañas (Tabs) -->
+            <div class="flex p-1 bg-slate-950/80 rounded-lg mb-6 border border-slate-800/50">
+                <button id="tab-login" onclick="switchTab('login')" class="flex-1 py-2 text-sm font-medium rounded-md transition bg-emerald-500 text-slate-950 font-bold shadow-sm cursor-pointer">
+                    Iniciar Sesión
+                </button>
+                <button id="tab-register" onclick="switchTab('register')" class="flex-1 py-2 text-sm font-medium rounded-md transition text-slate-400 hover:text-white cursor-pointer">
+                    Crear Cuenta
+                </button>
+            </div>
+
+            <!-- Formulario Unificado -->
+            <form id="auth-form" onsubmit="handleSubmit(event)" class="space-y-5">
+                
+                <!-- Campo Nombre (Oculto en Login, Visible en Registro) -->
+                <div id="field-name" class="hidden space-y-2">
+                    <label for="name" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Nombre del Míster / Club</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+                            <i class="fa-solid fa-user text-sm"></i>
+                        </span>
+                        <input type="text" id="name" placeholder="Ej. Club Deportivo Local" class="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-emerald-400 text-white transition placeholder-slate-600 text-sm">
+                    </div>
+                </div>
+
+                <!-- Campo Correo Electrónico -->
+                <div class="space-y-2">
+                    <label for="email" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Correo Electrónico</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+                            <i class="fa-solid fa-envelope text-sm"></i>
+                        </span>
+                        <input type="email" id="email" required placeholder="mister@tuclub.com" class="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-emerald-400 text-white transition placeholder-slate-600 text-sm">
+                    </div>
+                </div>
+
+                <!-- Campo Contraseña -->
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <label for="password" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Contraseña</label>
+                        <a id="link-forgot" href="#" class="text-xs text-emerald-400 hover:underline">¿La has olvidado?</a>
+                    </div>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+                            <i class="fa-solid fa-lock text-sm"></i>
+                        </span>
+                        <input type="password" id="password" required placeholder="••••••••" class="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-emerald-400 text-white transition placeholder-slate-600 text-sm">
+                    </div>
+                </div>
+
+                <!-- Botón de Acción Principal -->
+                <button type="submit" id="btn-submit" class="w-full py-3 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold rounded-xl transition shadow-lg shadow-emerald-500/10 cursor-pointer text-sm tracking-wide">
+                    Entrar al Vestuario
+                </button>
+            </form>
+
+            <!-- Separador Informativo -->
+            <div class="relative my-6">
+                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-800"></div></div>
+                <div class="relative flex justify-center text-xs uppercase"><span class="bg-slate-900 px-3 text-slate-500 tracking-wider">O continúa con</span></div>
+            </div>
+
+            <!-- Proveedor de Autenticación de Google -->
+            <button onclick="handleGoogleAuth()" class="w-full py-2.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-300 rounded-xl transition flex items-center justify-center gap-3 text-sm cursor-pointer">
+                <i class="fa-brands fa-google text-emerald-400"></i>
+                Cuenta de Google
+            </button>
+        </div>
+    </main>
+
+    <!-- Footer Corporativo -->
+    <footer class="py-6 text-center text-xs text-slate-600">
+        <p>&copy; 2026 MisterAI. Todos los derechos reservados.</p>
+    </footer>
+
+    <!-- Controlador Dinámico de la Interfaz -->
+    <script>
+        let currentMode = 'login';
+
+        function switchTab(mode) {
+            currentMode = mode;
+            
+            const tabLogin = document.getElementById('tab-login');
+            const tabRegister = document.getElementById('tab-register');
+            const fieldName = document.getElementById('field-name');
+            const btnSubmit = document.getElementById('btn-submit');
+            const formSubtitle = document.getElementById('form-subtitle');
+            const linkForgot = document.getElementById('link-forgot');
+            const nameInput = document.getElementById('name');
+
+            if (mode === 'login') {
+                // Interfaz para Iniciar Sesión
+                tabLogin.className = "flex-1 py-2 text-sm font-medium rounded-md transition bg-emerald-500 text-slate-950 font-bold shadow-sm cursor-pointer";
+                tabRegister.className = "flex-1 py-2 text-sm font-medium rounded-md transition text-slate-400 hover:text-white cursor-pointer";
+                
+                fieldName.classList.add('hidden');
+                nameInput.removeAttribute('required');
+                formSubtitle.innerText = "Accede a tu pizarra táctica automatizada";
+                btnSubmit.innerText = "Entrar al Vestuario";
+                linkForgot.classList.remove('hidden');
+            } else {
+                // Interfaz para Crear Cuenta
+                tabRegister.className = "flex-1 py-2 text-sm font-medium rounded-md transition bg-emerald-500 text-slate-950 font-bold shadow-sm cursor-pointer";
+                tabLogin.className = "flex-1 py-2 text-sm font-medium rounded-md transition text-slate-400 hover:text-white cursor-pointer";
+                
+                fieldName.classList.remove('hidden');
+                nameInput.setAttribute('required', 'true');
+                formSubtitle.innerText = "Empieza a analizar tus partidos en minutos";
+                btnSubmit.innerText = "Crear mi Cuenta de Míster";
+                linkForgot.classList.add('hidden');
+            }
+        }
+
+        async function handleSubmit(event) {
+            event.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (currentMode === 'login') {
+                // Llama a la función de auth.js
+                await loginMister(email, password);
+            } else {
+                const name = document.getElementById('name').value;
+                // Llama a la función de auth.js pasando el nombre del club
+                await registerMister(email, password, name);
+            }
+        }
+
+async function handleGoogleAuth() {
+    // Llama a la función de auth.js
+    await loginWithGoogle();
+}
+
+        function handleGoogleAuth() {
+            console.log('Autenticando con Google...');
+            alert('Abriendo pasarela de autenticación segura con Google...');
+        }
+    </script>
+</body>
+</html>

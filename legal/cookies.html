@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Política de Cookies - MisterAI</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #020617;
+            background-image: radial-gradient(circle at 50% 50%, #042f1a 0%, #020617 70%);
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between text-slate-100 font-sans antialiased">
+
+    <header class="h-16 border-b border-slate-900 bg-slate-950/80 backdrop-blur px-6 flex items-center justify-between sticky top-0 z-50">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-cookie-bite text-emerald-400 text-lg"></i>
+            <span class="text-sm font-bold tracking-wider uppercase text-slate-200">MisterAI <span class="text-emerald-400">Cookies</span></span>
+        </div>
+        <a href="index.html" class="text-xs text-slate-400 hover:text-emerald-400 transition flex items-center gap-1">
+            <i class="fa-solid fa-arrow-left"></i> Volver a la plataforma
+        </a>
+    </header>
+
+    <main class="flex-grow max-w-5xl w-full mx-auto px-4 py-12 md:py-16">
+        <div class="text-center mb-12">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight mb-3">Política de Cookies</h1>
+            <p class="text-xs text-slate-400">Transparencia técnica y cumplimiento de la LSSI-CE &bull; Actualizada al <span class="text-emerald-400 font-medium">26 de junio, 2026</span></p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <aside class="hidden md:block col-span-1">
+                <div class="sticky top-24 space-y-2 text-xs border-l border-slate-800 pl-4">
+                    <a href="#que-son" class="block text-slate-400 hover:text-emerald-400 transition py-1 font-semibold text-emerald-400">1. ¿Qué son las cookies?</a>
+                    <a href="#nuestras-cookies" class="block text-slate-400 hover:text-emerald-400 transition py-1">2. Cookies que utilizamos</a>
+                    <a href="#terceros" class="block text-slate-400 hover:text-emerald-400 transition py-1">3. Servicios de Terceros</a>
+                    <a href="#gestion" class="block text-slate-400 hover:text-emerald-400 transition py-1">4. Gestión y Desactivación</a>
+                </div>
+            </aside>
+
+            <section class="col-span-1 md:col-span-3 space-y-8 text-sm text-slate-300 leading-relaxed bg-slate-950/40 p-6 md:p-8 rounded-2xl border border-slate-900/60 backdrop-blur-sm">
+                
+                <div id="que-son" class="scroll-mt-24 border-l-2 border-emerald-500/40 pl-4 bg-emerald-500/[0.02] py-2 pr-2 rounded-r-xl">
+                    <h3 class="text-base font-bold text-white flex items-center gap-2 mb-3">
+                        <span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-mono">01</span>
+                        ¿Qué es una cookie y para qué sirve?
+                    </h3>
+                    <p class="mb-3">
+                        Una cookie es un pequeño archivo de texto que un sitio web almacena en tu ordenador, teléfono o dispositivo móvil cuando lo visitas. En MisterAI utilizamos cookies y tecnologías similares (como el almacenamiento local del navegador o <em>Local Storage</em>) exclusivamente para garantizar el funcionamiento técnico de la plataforma.
+                    </p>
+                    <p class="text-xs text-slate-400">
+                        A diferencia de otras plataformas, <strong class="text-slate-200">no utilizamos cookies publicitarias invasivas</strong> ni vendemos tus hábitos de navegación a terceros.
+                    </p>
+                </div>
+
+                <div id="nuestras-cookies" class="scroll-mt-24">
+                    <h3 class="text-base font-bold text-white flex items-center gap-2 mb-3">
+                        <span class="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded font-mono">02</span>
+                        Cookies Técnicas (Estrictamente Necesarias)
+                    </h3>
+                    <p class="mb-2">
+                        Según la normativa vigente, no requerimos tu consentimiento expreso para instalar cookies técnicas, ya que son indispensables para que la plataforma de análisis táctico funcione. Estas cookies permiten:
+                    </p>
+                    <ul class="list-disc pl-5 space-y-1 text-xs text-slate-300">
+                        <li><strong class="text-emerald-400">Sesión y Autenticación:</strong> Mantener tu sesión abierta de forma segura mientras navegas entre el panel de control y la herramienta de subida de vídeo (gestionado mediante tokens JWT).</li>
+                        <li><strong class="text-white">Seguridad:</strong> Detectar intentos de acceso no autorizados a tu cuenta de entrenador.</li>
+                        <li><strong class="text-white">Balanceo de carga:</strong> Distribuir el tráfico de subida de vídeos para que los servidores no se saturen.</li>
+                    </ul>
+                </div>
+
+                <div id="terceros" class="scroll-mt-24">
+                    <h3 class="text-base font-bold text-white flex items-center gap-2 mb-3">
+                        <span class="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded font-mono">03</span>
+                        Cookies de Proveedores Tecnológicos (Terceros)
+                    </h3>
+                    <p class="mb-2">
+                        Para ofrecer un servicio de élite, delegamos la seguridad y los pagos en infraestructuras líderes a nivel mundial. Estos proveedores instalan sus propias cookies técnicas cuando interactúas con sus módulos:
+                    </p>
+                    
+                    <div class="space-y-4 mt-4">
+                        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-900">
+                            <h4 class="text-white font-bold text-xs uppercase tracking-wider mb-1"><i class="fa-solid fa-database text-emerald-500 mr-1"></i> Supabase (Autenticación)</h4>
+                            <p class="text-[11px] text-slate-400">
+                                Supabase utiliza el almacenamiento local (Local/Session Storage) de tu navegador para guardar el token seguro de tu cuenta. Esto evita que tengas que introducir tu contraseña cada vez que haces clic en un análisis de partido. Son datos temporales y cifrados.
+                            </p>
+                        </div>
+
+                        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-900">
+                            <h4 class="text-white font-bold text-xs uppercase tracking-wider mb-1"><i class="fa-brands fa-stripe text-indigo-400 mr-1"></i> Stripe (Pasarela de Pagos)</h4>
+                            <p class="text-[11px] text-slate-400">
+                                Al contratar un plan, Stripe instala cookies avanzadas antifraude. Son obligatorias a nivel legal (Directiva PSD2 europea) para procesar pagos de forma segura, validar que la tarjeta es tuya y prevenir ataques automatizados.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="gestion" class="scroll-mt-24">
+                    <h3 class="text-base font-bold text-white flex items-center gap-2 mb-3">
+                        <span class="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded font-mono">04</span>
+                        Gestión y Desactivación en el Navegador
+                    </h3>
+                    <p class="mb-2">
+                        Aunque nuestras cookies son necesarias para el funcionamiento del vestuario táctico, tienes derecho a bloquearlas o eliminarlas directamente desde la configuración de tu navegador. <strong class="text-rose-400">Advertencia:</strong> Si desactivas las cookies técnicas de Supabase, no podrás iniciar sesión ni subir vídeos.
+                    </p>
+                    <p class="text-xs text-slate-400 mb-2">Puedes encontrar instrucciones sobre cómo gestionar las cookies en los navegadores más habituales en los siguientes enlaces oficiales:</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                        <a href="https://support.google.com/chrome/answer/95647" target="_blank" rel="noopener noreferrer" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-2 rounded-lg text-center text-slate-300 hover:text-white transition">Chrome</a>
+                        <a href="https://support.apple.com/es-es/guide/safari/sfri11471/mac" target="_blank" rel="noopener noreferrer" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-2 rounded-lg text-center text-slate-300 hover:text-white transition">Safari</a>
+                        <a href="https://support.mozilla.org/es/kb/habilitar-y-deshabilitar-cookies-sitios-web" target="_blank" rel="noopener noreferrer" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-2 rounded-lg text-center text-slate-300 hover:text-white transition">Firefox</a>
+                        <a href="https://support.microsoft.com/es-es/microsoft-edge/eliminar-las-cookies-en-microsoft-edge-63947406-40ac-c3b8-57b9-2a946a29ae09" target="_blank" rel="noopener noreferrer" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-2 rounded-lg text-center text-slate-300 hover:text-white transition">Edge</a>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+    </main>
+
+    <footer class="h-12 border-t border-slate-900 bg-slate-950 px-6 flex items-center justify-between shrink-0 text-[10px] text-slate-500">
+        <div>&copy; 2026 MisterAI. Todos los derechos reservados.</div>
+        <div class="flex gap-4">
+            <a href="terminos.html" class="hover:text-slate-300">Términos</a>
+            <span class="text-slate-800">|</span>
+            <a href="privacidad.html" class="hover:text-slate-300">Privacidad</a>
+            <span class="text-slate-800">|</span>
+            <a href="cookies.html" class="text-emerald-400 underline">Cookies</a>
+        </div>
+    </footer>
+
+</body>
+</html>
