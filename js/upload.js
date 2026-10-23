@@ -1,195 +1,146 @@
-// upload.js - Gestión de subida de partidos y datos tácticos para MisterAI
+// upload.js - Subida de partidos para MisterAI
+// Requiere cargar antes: supabase-js, tus-js-client (CDN), js/config.js y js/auth.js
+//
+// Flujo: huella rápida -> subida reanudable (TUS) al bucket privado -> fila en 'partidos'
+// -> aviso opcional al backend. Toda la lógica de almacenamiento está en uploadVideoResumable():
+// si más adelante el vídeo pasa a otro proveedor (R2, Modal...), solo se toca esa función.
+
+const ALLOWED_VIDEO_EXT = ['mp4', 'mov', 'm4v'];
+const TUS_CHUNK_SIZE = 6 * 1024 * 1024; // Supabase exige trozos de 6 MB
+
+/** Valida extensión y tamaño. Devuelve un mensaje de error o null si todo está bien. */
+function validateMatchFile(file) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!ALLOWED_VIDEO_EXT.includes(ext)) {
+        return 'Archivo no válido. Sube un vídeo del partido (.mp4, .mov o .m4v).';
+    }
+    const maxBytes = MISTERAI_CONFIG.MAX_FILE_GB * 1024 * 1024 * 1024;
+    if (file.size > maxBytes) {
+        return `El vídeo supera el máximo de ${MISTERAI_CONFIG.MAX_FILE_GB} GB.`;
+    }
+    return null;
+}
 
 /**
- * Configuración del Bucket de Supabase.
- * Asegúrate de crear un bucket público o privado llamado 'partidos' en la sección de Storage de tu panel de Supabase.
+ * Huella rápida del vídeo: SHA-256 de tamaño + 3 fragmentos (inicio, mitad, final).
+ * Calcular el SHA-256 completo de 2-3 GB en el navegador no es viable en móviles;
+ * esta huella detecta duplicados exactos al instante. El backend puede calcular
+ * después el hash completo si quiere una verificación definitiva.
  */
-const BUCKET_NAME = 'partidos';
+async function quickFingerprint(file) {
+    const SLICE = 4 * 1024 * 1024;
+    const starts = [0, Math.max(0, Math.floor(file.size / 2) - SLICE / 2), Math.max(0, file.size - SLICE)];
+    const parts = [new TextEncoder().encode(String(file.size))];
+    for (const s of starts) {
+        parts.push(new Uint8Array(await file.slice(s, s + SLICE).arrayBuffer()));
+    }
+    const total = parts.reduce((n, p) => n + p.length, 0);
+    const buf = new Uint8Array(total);
+    let offset = 0;
+    for (const p of parts) { buf.set(p, offset); offset += p.length; }
+    const digest = await crypto.subtle.digest('SHA-256', buf);
+    return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
-/**
- * Inicializa los eventos de la zona de arrastrar y soltar (Drag & Drop)
- * @param {string} dropZoneId - ID del elemento HTML que servirá de zona de soltar
- * @param {string} fileInputId - ID del input de tipo file oculto
- */
-function initDragAndDrop(dropZoneId, fileInputId) {
-    const dropZone = document.getElementById(dropZoneId);
-    const fileInput = document.getElementById(fileInputId);
+/** Subida reanudable al bucket privado de Supabase Storage (protocolo TUS). */
+function uploadVideoResumable(file, objectName, accessToken, onProgress) {
+    return new Promise((resolve, reject) => {
+        const upload = new tus.Upload(file, {
+            endpoint: `${MISTERAI_CONFIG.SUPABASE_URL}/storage/v1/upload/resumable`,
+            retryDelays: [0, 3000, 5000, 10000, 20000],
+            headers: {
+                authorization: `Bearer ${accessToken}`,
+                apikey: MISTERAI_CONFIG.SUPABASE_ANON_KEY,
+                'x-upsert': 'false'
+            },
+            uploadDataDuringCreation: true,
+            removeFingerprintOnSuccess: true,
+            metadata: {
+                bucketName: MISTERAI_CONFIG.BUCKET,
+                objectName,
+                contentType: file.type || 'video/mp4',
+                cacheControl: '3600'
+            },
+            chunkSize: TUS_CHUNK_SIZE,
+            onError: reject,
+            onProgress: (sent, total) => onProgress && onProgress(Math.round((sent / total) * 100)),
+            onSuccess: resolve
+        });
 
-    if (!dropZone || !fileInput) return;
-
-    // Prevenir comportamiento por defecto del navegador al arrastrar archivos
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, e => e.preventDefault(), false);
-        document.body.addEventListener(eventName, e => e.preventDefault(), false);
-    });
-
-    // Efecto visual al pasar el archivo sobre la zona
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => {
-            dropZone.classList.add('border-emerald-400', 'bg-emerald-500/5');
-        }, false);
-    });
-
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => {
-            dropZone.classList.remove('border-emerald-400', 'bg-emerald-500/5');
-        }, false);
-    });
-
-    // Capturar el archivo cuando se suelta
-    dropZone.addEventListener('drop', (e) => {
-        const dt = e.dataTransfer;
-        const files = dt.files;
-        if (files.length > 0) {
-            fileInput.files = files;
-            handleMatchFile(files[0]);
-        }
-    });
-
-    // Capturar el archivo si se selecciona mediante el explorador clásico
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-            handleMatchFile(e.target.files[0]);
-        }
+        // Si hay una subida interrumpida de este mismo archivo, se reanuda donde se quedó
+        upload.findPreviousUploads().then(prev => {
+            if (prev.length) upload.resumeFromPreviousUpload(prev[0]);
+            upload.start();
+        });
     });
 }
 
 /**
- * Valida el archivo seleccionado antes de iniciar la subida
- * @param {File} file 
+ * Sube un partido y lo registra para su análisis.
+ * @param {File} file
+ * @param {{nombre?: string, modalidad?: string, onProgress?: function(number)}} opts
+ * @returns {Promise<{partido: object, duplicado: boolean}>}
  */
-function handleMatchFile(file) {
-    // Validar extensiones permitidas (Vídeos mp4, mov o archivos de datos como csv/json)
-    const allowedExtensions = ['mp4', 'mov', 'avi', 'csv', 'json'];
-    const fileExtension = file.name.split('.').pop().toLowerCase();
+async function uploadMatch(file, opts = {}) {
+    if (!sb) throw new Error('El servicio aún no está configurado.');
 
-    if (!allowedExtensions.includes(fileExtension)) {
-        alert('❌ Archivo no válido. Sube un vídeo del partido (.mp4, .mov) o un set de datos tácticos.');
-        return;
+    const problem = validateMatchFile(file);
+    if (problem) throw new Error(problem);
+
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+        window.location.href = pageUrl('login.html');
+        throw new Error('Debes iniciar sesión para subir un partido.');
     }
+    const user = session.user;
 
-    // Mostrar interfaz de carga (Si tienes una barra de progreso en tu HTML)
-    updateUploadUI('ready', file.name);
-}
+    const huella = await quickFingerprint(file);
 
-/**
- * Sube el archivo a Supabase Storage y lo registra en la base de datos
- * @param {string} fileInputId - ID del input file que contiene el archivo
- * @param {string} matchName - Nombre descriptivo del partido (Ej: "Jerez CD vs Cádiz B")
- */
-async function uploadMatch(fileInputId, matchName) {
-    const fileInput = document.getElementById(fileInputId);
-    if (!fileInput || fileInput.files.length === 0) {
-        alert('⚠️ Por favor, selecciona o arrastra un archivo de partido primero.');
-        return;
-    }
+    // ¿Ya subiste este mismo vídeo? Evitamos subirlo (y analizarlo) dos veces.
+    const { data: existente } = await sb
+        .from('partidos')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('huella', huella)
+        .maybeSingle();
+    if (existente) return { partido: existente, duplicado: true };
 
-    const file = fileInput.files[0];
-    
-    // Validar que el usuario esté autenticado (utiliza el cliente de auth.js)
-    if (!supabase) {
-        alert('⚠️ Error de conexión con el servidor.');
-        return;
-    }
-    
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-        alert('⚠️ Debes iniciar sesión para subir contenido al vestuario.');
-        window.location.href = 'login.html';
-        return;
-    }
+    const ext = file.name.split('.').pop().toLowerCase();
+    const objectName = `${user.id}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
-    // Crear un nombre de archivo único para evitar colisiones en el Storage
-    const fileExtension = file.name.split('.').pop();
-    const uniqueFileName = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
+    await uploadVideoResumable(file, objectName, session.access_token, opts.onProgress);
 
-    try {
-        updateUploadUI('uploading', 0);
+    const { data: partido, error } = await sb
+        .from('partidos')
+        .insert({
+            user_id: user.id,
+            nombre: (opts.nombre || '').trim() || `Partido ${new Date().toLocaleDateString('es-ES')}`,
+            modalidad: opts.modalidad || 'Fútbol 11',
+            file_path: objectName,
+            huella,
+            tamano_bytes: file.size,
+            estado_analisis: 'pendiente'
+        })
+        .select()
+        .single();
+    if (error) throw error;
 
-        // 1. Subir archivo al Storage de Supabase
-        // Nota: El SDK de Supabase v2 maneja la subida de archivos grandes automáticamente.
-        const { data: storageData, error: storageError } = await supabase.storage
-            .from(BUCKET_NAME)
-            .upload(uniqueFileName, file, {
-                cacheControl: '3600',
-                upsert: false
+    // Aviso al backend (Render). Si falla no es grave: la fila queda en 'pendiente'
+    // y el backend puede recogerla igualmente.
+    if (MISTERAI_CONFIG.API_URL) {
+        try {
+            await fetch(`${MISTERAI_CONFIG.API_URL}/api/partido-subido`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session.access_token}`
+                },
+                body: JSON.stringify({ partido_id: partido.id })
             });
-
-        if (storageError) throw storageError;
-
-        // Obtener la URL pública del archivo subido
-        const { data: { publicUrl } } = supabase.storage
-            .from(BUCKET_NAME)
-            .getPublicUrl(uniqueFileName);
-
-        // 2. Registrar el partido en tu tabla de la base de datos ('partidos' o 'matches')
-        // Esto despertará a tu backend o pipeline de IA (YOLO) para procesar el análisis táctico.
-        const { data: dbData, error: dbError } = await supabase
-            .from('partidos')
-            .insert([
-                {
-                    user_id: user.id,
-                    nombre: matchName || `Partido ${new Date().toLocaleDateString()}`,
-                    file_path: uniqueFileName,
-                    file_url: publicUrl,
-                    estado_analisis: 'pendiente', // 'pendiente', 'procesando', 'completado'
-                    tipo_archivo: fileExtension
-                }
-            ])
-            .select();
-
-        if (dbError) throw dbError;
-
-        updateUploadUI('success', file.name);
-        console.log('Partido registrado con éxito para análisis:', dbData);
-        
-        // Redirigir o refrescar el panel después de 2 segundos
-        setTimeout(() => {
-            window.location.href = 'dashboard.html';
-        }, 2000);
-
-    } catch (error) {
-        console.error('Error durante el proceso de subida:', error.message);
-        updateUploadUI('error', error.message);
-        alert(`Error al procesar el partido: ${error.message}`);
+        } catch (e) {
+            console.warn('No se pudo avisar al backend; el partido queda pendiente.', e);
+        }
     }
-}
 
-/**
- * Función auxiliar para actualizar los textos y barras de progreso en el HTML
- * Modifica esto según las clases y componentes que uses en tu frontend.
- */
-function updateUploadUI(status, payload) {
-    const statusText = document.getElementById('upload-status-text');
-    const progressBar = document.getElementById('upload-progress-bar');
-    const progressContainer = document.getElementById('upload-progress-container');
-
-    if (!statusText) return;
-
-    switch (status) {
-        case 'ready':
-            statusText.innerText = `⚽ Archivo cargado: ${payload}. Listo para entrar al vestuario.`;
-            if (progressContainer) progressContainer.classList.add('hidden');
-            break;
-        case 'uploading':
-            statusText.innerText = `⏳ Subiendo partido al servidor táctico... Por favor, no cierres la pestaña.`;
-            if (progressContainer) progressContainer.classList.remove('hidden');
-            if (progressBar) progressBar.style.width = `50%`; // Estado indeterminado simulado en carga directa simple
-            break;
-        case 'success':
-            statusText.innerText = `✅ ¡Subida completada con éxito! Enviando a la pizarra de MisterAI...`;
-            if (progressBar) {
-                progressBar.style.width = `100%`;
-                progressBar.classList.remove('bg-emerald-500');
-                progressBar.classList.add('bg-blue-500');
-            }
-            break;
-        case 'error':
-            statusText.innerText = `❌ Error en la subida: ${payload}`;
-            if (progressBar) {
-                progressBar.classList.remove('bg-emerald-500');
-                progressBar.classList.add('bg-red-500');
-            }
-            break;
-    }
+    return { partido, duplicado: false };
 }

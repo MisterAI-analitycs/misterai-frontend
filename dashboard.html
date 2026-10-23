@@ -26,9 +26,8 @@
         </div>
         <div class="flex items-center gap-4">
             <span class="text-xs text-slate-400 hidden sm:inline-block">Temporada 2026/2027</span>
-            <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-emerald-400">
-                Míster
-            </div>
+            <div id="user-badge" class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-emerald-400">MI</div>
+            <button id="btn-logout" class="text-xs text-slate-400 hover:text-white transition cursor-pointer" title="Cerrar sesión"><i class="fa-solid fa-right-from-bracket"></i></button>
         </div>
     </header>
 
@@ -41,6 +40,13 @@
                 </h3>
             </div>
             
+            <div id="upload-progress" class="hidden space-y-1.5">
+                <div class="w-full h-2 bg-slate-900 rounded-full overflow-hidden">
+                    <div id="upload-progress-bar" class="h-full bg-emerald-500 transition-all" style="width:0%"></div>
+                </div>
+                <p id="upload-progress-text" class="text-[10px] text-slate-400"></p>
+            </div>
+
             <div id="drop-zone" class="border-2 border-dashed border-slate-800 hover:border-emerald-500/40 bg-slate-900/10 hover:bg-emerald-500/5 p-8 rounded-xl transition cursor-pointer flex flex-col items-center justify-center text-center gap-3 group relative overflow-hidden">
                 <input type="file" id="file-input" accept="video/*" class="absolute inset-0 opacity-0 cursor-pointer z-10" />
                 
@@ -99,117 +105,17 @@
             </div>
 
             <div id="matches-container" class="space-y-2">
-                
-                <a href="analizar.html?id=demo-match" class="flex items-center justify-between p-4 bg-slate-900/20 hover:bg-slate-900/60 border border-slate-900 hover:border-slate-800 rounded-xl transition group">
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
-                            <i class="fa-solid fa-file-video"></i>
-                        </div>
-                        <div class="min-w-0">
-                            <h4 class="text-xs font-bold text-white group-hover:text-emerald-400 transition truncate">PSG_vs_Bayern_Champions_League_ANALYST.mp4</h4>
-                            <span class="text-[10px] text-slate-500 block mt-0.5">Procesado hace 2 horas &bull; Fútbol 11</span>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-chevron-right text-xs text-slate-600 group-hover:text-white transition transform group-hover:translate-x-1 pl-2"></i>
-                </a>
 
             </div>
         </section>
     </main>
 
-    <script>
-        const dropZone = document.getElementById('drop-zone');
-        const fileInput = document.getElementById('file-input');
-        const uploadDetails = document.getElementById('upload-details');
-        const originalFilename = document.getElementById('original-filename');
-        const fileSize = document.getElementById('file-size');
-        const matchNameInput = document.getElementById('match-name');
-        const matchTypeSelect = document.getElementById('match-type');
-        const btnSubmitAnalysis = document.getElementById('btn-submit-analysis');
-        const matchesContainer = document.getElementById('matches-container');
-
-        // Efecto visual al arrastrar archivos sobre la zona táctica
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, (e) => {
-                e.preventDefault();
-                dropZone.classList.add('border-emerald-400', 'bg-emerald-500/10');
-            }, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, (e) => {
-                e.preventDefault();
-                dropZone.classList.remove('border-emerald-400', 'bg-emerald-500/10');
-            }, false);
-        });
-
-        // Capturar archivo por selección o por arrastre
-        fileInput.addEventListener('change', handleFileSetup);
-        dropZone.addEventListener('drop', (e) => {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            if (files.length > 0) {
-                fileInput.files = files;
-                handleFileSetup();
-            }
-        });
-
-        function handleFileSetup() {
-            const file = fileInput.files[0];
-            if (file) {
-                // Hacer visible el panel de personalización
-                uploadDetails.classList.remove('hidden');
-                
-                // Cargar metadatos reales del archivo
-                originalFilename.innerText = file.name;
-                fileSize.innerText = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
-                
-                // Formatear automáticamente un nombre limpio en el input (removiendo guiones y extensión)
-                const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
-                matchNameInput.value = baseName.replace(/[-_]/g, ' ');
-                
-                // Foco automático para que puedas renombrarlo directamente
-                matchNameInput.focus();
-            }
-        }
-
-        // Simulación de subida e inserción dinámica en la lista conservada
-        btnSubmitAnalysis.addEventListener('click', () => {
-            const finalName = matchNameInput.value.trim() || originalFilename.innerText;
-            const matchType = matchTypeSelect.value;
-
-            if (!fileInput.files[0]) return;
-
-            // Creamos la nueva fila imitando al 100% el diseño original premium
-            const newMatchId = 'match-' + Date.now();
-            const cardHTML = `
-                <a href="analizar.html?id=${newMatchId}" class="flex items-center justify-between p-4 bg-slate-900/40 border border-emerald-500/20 rounded-xl transition group animate-fadeIn">
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 relative">
-                            <i class="fa-solid fa-circle-notch animate-spin text-[10px] absolute"></i>
-                            <i class="fa-solid fa-file-video opacity-15"></i>
-                        </div>
-                        <div class="min-w-0">
-                            <h4 class="text-xs font-bold text-emerald-400 truncate">${finalName}</h4>
-                            <span class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
-                                <span class="text-amber-400 font-medium flex items-center gap-1"><i class="fa-solid fa-spinner animate-spin text-[8px]"></i> Procesando video...</span>
-                                <span class="text-slate-700">&bull;</span>
-                                <span>${matchType}</span>
-                            </span>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-chevron-right text-xs text-slate-600 group-hover:text-white transition transform group-hover:translate-x-1 pl-2"></i>
-                </a>
-            `;
-
-            // Insertar el nuevo partido al principio de tu contenedor existente
-            matchesContainer.insertAdjacentHTML('afterbegin', cardHTML);
-            
-            // Ocultar y limpiar el formulario para la próxima carga
-            uploadDetails.classList.add('hidden');
-            fileInput.value = '';
-        });
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.1.0/dist/tus.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/upload.js"></script>
+    <script src="js/dashboard.js"></script>
 
     <style>
         @keyframes fadeIn {
