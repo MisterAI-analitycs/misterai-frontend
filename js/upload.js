@@ -1,12 +1,11 @@
 // upload.js - Subida de partidos para MisterAI
-// Requiere cargar antes: supabase-js, tus-js-client (CDN), js/config.js y js/auth.js
+// Requiere cargar antes: supabase-js (CDN), js/config.js y js/auth.js
 //
-// Flujo: huella rápida -> subida reanudable (TUS) al bucket privado -> fila en 'partidos'
+// Flujo: huella rápida -> subida a R2 -> fila en 'partidos'
 // -> aviso opcional al backend. Toda la lógica de almacenamiento está en uploadVideoResumable():
 // si más adelante el vídeo pasa a otro proveedor (R2, Modal...), solo se toca esa función.
 
 const ALLOWED_VIDEO_EXT = ['mp4', 'mov', 'm4v'];
-const TUS_CHUNK_SIZE = 6 * 1024 * 1024; // Supabase exige trozos de 6 MB
 
 /** Valida extensión y tamaño. Devuelve un mensaje de error o null si todo está bien. */
 function validateMatchFile(file) {
@@ -42,37 +41,12 @@ async function quickFingerprint(file) {
     return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-/** Subida reanudable al bucket privado de Supabase Storage (protocolo TUS). */
+/**
+ * TEMPORAL: la subida a Cloudflare R2 se implementará cuando exista el backend
+ * (que generará las URLs firmadas). Mientras tanto, falla con un mensaje claro.
+ */
 function uploadVideoResumable(file, objectName, accessToken, onProgress) {
-    return new Promise((resolve, reject) => {
-        const upload = new tus.Upload(file, {
-            endpoint: `${MISTERAI_CONFIG.SUPABASE_URL}/storage/v1/upload/resumable`,
-            retryDelays: [0, 3000, 5000, 10000, 20000],
-            headers: {
-                authorization: `Bearer ${accessToken}`,
-                apikey: MISTERAI_CONFIG.SUPABASE_ANON_KEY,
-                'x-upsert': 'false'
-            },
-            uploadDataDuringCreation: true,
-            removeFingerprintOnSuccess: true,
-            metadata: {
-                bucketName: MISTERAI_CONFIG.BUCKET,
-                objectName,
-                contentType: file.type || 'video/mp4',
-                cacheControl: '3600'
-            },
-            chunkSize: TUS_CHUNK_SIZE,
-            onError: reject,
-            onProgress: (sent, total) => onProgress && onProgress(Math.round((sent / total) * 100)),
-            onSuccess: resolve
-        });
-
-        // Si hay una subida interrumpida de este mismo archivo, se reanuda donde se quedó
-        upload.findPreviousUploads().then(prev => {
-            if (prev.length) upload.resumeFromPreviousUpload(prev[0]);
-            upload.start();
-        });
-    });
+    return Promise.reject(new Error('La subida de vídeos aún no está activada (pendiente de conectar con R2).'));
 }
 
 /**

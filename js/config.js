@@ -3,14 +3,14 @@
 // La anon key de Supabase es pública por diseño: la protegen las políticas RLS.
 
 const MISTERAI_CONFIG = {
-    SUPABASE_URL: 'https://TU-PROYECTO.supabase.co',
-    SUPABASE_ANON_KEY: 'TU-ANON-KEY',
+    SUPABASE_URL: 'https://wzrxnvaumnntombqqjnv.supabase.co',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6cnhudmF1bW5udG9tYnFxam52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3NjM1MTEsImV4cCI6MjA5ODMzOTUxMX0.HsbyBJbMzA7aH9dfAFrz-FMCy9VgBz2rWvSAB8N0Hjs',
     API_URL: '',            // URL del backend FastAPI en Render. Vacío mientras no exista.
-    BUCKET: 'partidos',     // Bucket PRIVADO de Supabase Storage
-    MAX_FILE_GB: 4          // Tamaño máximo aceptado en el navegador
+    // Los vídeos NO van a Supabase: irán a Cloudflare R2 mediante URLs firmadas del backend.
+    MAX_FILE_GB: 6          // Tamaño máximo aceptado en el navegador (1080p, 90 min: 3,5-6 GB)
 };
 
-const CONFIG_OK = !MISTERAI_CONFIG.SUPABASE_URL.includes('TU-PROYECTO');
+const CONFIG_OK = !MISTERAI_CONFIG.SUPABASE_URL.includes('TU-PROYECTO') && !MISTERAI_CONFIG.SUPABASE_ANON_KEY.includes('TU-ANON');
 
 // Cliente único de Supabase, compartido por auth.js, upload.js y dashboard.js
 const sb = (window.supabase && CONFIG_OK)

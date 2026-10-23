@@ -41,5 +41,5 @@ misterai-frontend/
 ## Puesta en marcha (Supabase)
 1. Crea el proyecto en Supabase y ejecuta `supabase/schema.sql` en el SQL Editor.
 2. Rellena `js/config.js` con `SUPABASE_URL` y `SUPABASE_ANON_KEY` (la anon key es pública; nunca pongas la service_role aquí).
-3. Para vídeos de 1,5-3 GB: plan Pro de Supabase y límite de archivo del bucket subido (el esquema lo fija en 4 GB).
+3. Los vídeos van a Cloudflare R2, no a Supabase Storage: el plan gratuito de Supabase basta para usuarios y base de datos.
 4. En Authentication > URL Configuration añade la URL del sitio como redirect permitido.
