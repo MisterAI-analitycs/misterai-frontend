@@ -247,3 +247,10 @@ Thumbs.db
 # Frontend y dependencias (Por si acaso usas librerías de diseño o Node en el futuro)
 node_modules/
 .eslintcache
+node_modules/
+css/tailwind.css
+_site/
+
+node_modules/
+css/tailwind.css
+_site/
