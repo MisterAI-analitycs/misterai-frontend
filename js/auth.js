@@ -1,6 +1,30 @@
 // auth.js - Autenticación con Supabase para MisterAI
 // Requiere cargar antes: supabase-js (CDN) y js/config.js
 
+/** Aviso flotante dentro de la página (sustituye a las ventanas alert del navegador). */
+function showToast(message, type = 'error') {
+    const old = document.getElementById('misterai-toast');
+    if (old) old.remove();
+    const el = document.createElement('div');
+    el.id = 'misterai-toast';
+    el.setAttribute('role', 'alert');
+    el.textContent = message;
+    const colors = { error: '#be123c', success: '#059669', info: '#334155' };
+    el.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:9999;max-width:90vw;'
+        + 'padding:12px 18px;border-radius:12px;font:500 14px system-ui,sans-serif;color:#fff;'
+        + 'box-shadow:0 8px 24px rgba(0,0,0,.4);background:' + (colors[type] || colors.info);
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6000);
+}
+
+// Cualquier alert() de la web se muestra ahora como aviso dentro de la página.
+window.alert = (msg) => {
+    const text = String(msg);
+    if (/error|⚠|no se pudo|no v[aá]lido|supera|falta/i.test(text)) showToast(text, 'error');
+    else if (/creada/i.test(text)) showToast(text, 'success');
+    else showToast(text, 'info');
+};
+
 function requireClient() {
     if (!sb) {
         alert('⚠️ El servicio aún no está configurado. Revisa js/config.js.');
