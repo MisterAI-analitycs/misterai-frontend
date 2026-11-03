@@ -5,8 +5,8 @@
 const MISTERAI_CONFIG = {
     SUPABASE_URL: 'https://wzrxnvaumnntombqqjnv.supabase.co',
     SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6cnhudmF1bW5udG9tYnFxam52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3NjM1MTEsImV4cCI6MjA5ODMzOTUxMX0.HsbyBJbMzA7aH9dfAFrz-FMCy9VgBz2rWvSAB8N0Hjs',
-    API_URL: '',            // URL del backend FastAPI en Render. Vacío mientras no exista.
-    // Los vídeos NO van a Supabase: irán a Cloudflare R2 mediante URLs firmadas del backend.
+    API_URL: 'https://misterai-backend.onrender.com',  // Backend FastAPI en Render
+    // Los vídeos NO van a Supabase: se suben a Cloudflare R2 mediante URLs firmadas del backend.
     MAX_FILE_GB: 6          // Tamaño máximo aceptado en el navegador (1080p, 90 min: 3,5-6 GB)
 };
 
