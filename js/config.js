@@ -34,6 +34,6 @@ function pageUrl(name) {
     const link = document.createElement('link');
     link.rel = 'icon';
     link.type = 'image/svg+xml';
-    link.href = new URL('../favicon.svg', document.currentScript ? document.currentScript.src : window.location.href).href;
+    link.href = new URL('../css/favicon.svg', document.currentScript ? document.currentScript.src : window.location.href).href;
     document.head.appendChild(link);
 })();
