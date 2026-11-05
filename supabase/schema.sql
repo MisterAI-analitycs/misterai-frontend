@@ -51,3 +51,11 @@ create policy "ver mi perfil" on public.perfiles
 
 -- El primer administrador se da de alta con una sentencia aparte, indicando su user id:
 -- insert into public.perfiles (id, rol) values ('<user_id>', 'admin');
+
+-- Permisos. Los proyectos nuevos de Supabase no conceden acceso a las tablas por defecto:
+-- sin estos GRANT, la API devuelve "permission denied" aunque las políticas RLS existan.
+-- anon no tiene acceso. El navegador (authenticated) solo lee; escribe el backend (service_role).
+grant select on public.partidos to authenticated;
+grant select on public.perfiles to authenticated;
+grant select, insert, update, delete on public.partidos to service_role;
+grant select, insert, update, delete on public.perfiles to service_role;
