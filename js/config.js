@@ -27,3 +27,13 @@ if (!window.supabase) {
 function pageUrl(name) {
     return new URL(name, window.location.href).href;
 }
+
+// Favicon para las páginas que cargan este archivo (login y panel)
+(function () {
+    if (document.querySelector('link[rel~="icon"]')) return;
+    const link = document.createElement('link');
+    link.rel = 'icon';
+    link.type = 'image/svg+xml';
+    link.href = new URL('../favicon.svg', document.currentScript ? document.currentScript.src : window.location.href).href;
+    document.head.appendChild(link);
+})();
