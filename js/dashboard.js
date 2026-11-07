@@ -1,5 +1,5 @@
 // dashboard.js - Panel del entrenador: subida de partidos y listado del historial
-// Requiere cargar antes: supabase-js, tus-js-client, js/config.js, js/auth.js y js/upload.js
+// Requiere cargar antes: supabase-js, js/config.js, js/auth.js y js/upload.js
 
 const $ = (id) => document.getElementById(id);
 
@@ -42,6 +42,10 @@ function matchCard(m) {
     const date = new Date(m.created_at).toLocaleDateString('es-ES');
     const tag = done ? 'a' : 'div';
     const href = done ? ` href="analizar.html?id=${encodeURIComponent(m.id)}"` : '';
+    // Si el análisis falló, se explica el motivo (p. ej. que el vídeo ya se borró del servidor).
+    const aviso = m.estado_analisis === 'error'
+        ? `<p class="text-[10px] text-rose-400/90 mt-1 leading-snug">${esc(m.error || 'No se pudo completar el análisis. Inténtalo de nuevo.')}</p>`
+        : '';
     return `
         <${tag}${href} class="flex items-center justify-between p-4 bg-slate-900/20 ${done ? 'hover:bg-slate-900/60 cursor-pointer' : ''} border border-slate-900 rounded-xl transition group">
             <div class="flex items-center gap-4 min-w-0">
@@ -59,6 +63,7 @@ function matchCard(m) {
                         <span class="text-slate-700">&bull;</span>
                         <span>${date}</span>
                     </span>
+                    ${aviso}
                 </div>
             </div>
             ${done ? '<i class="fa-solid fa-chevron-right text-xs text-slate-600 group-hover:text-white transition pl-2"></i>' : ''}
@@ -70,9 +75,10 @@ async function loadMatches() {
         els.matches.innerHTML = '<p class="text-xs text-slate-500 p-4">Servicio sin configurar (js/config.js).</p>';
         return;
     }
+    // 'error' es un alias del campo "error" dentro del JSON de resultados (así no se descargan los mapas de calor).
     const { data, error } = await sb
         .from('partidos')
-        .select('id, nombre, modalidad, estado_analisis, created_at')
+        .select('id, nombre, modalidad, estado_analisis, created_at, error:resultados->>error')
         .order('created_at', { ascending: false });
 
     if (error) {
