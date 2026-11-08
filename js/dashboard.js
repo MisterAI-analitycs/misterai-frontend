@@ -122,6 +122,14 @@ function setupFile() {
     els.matchName.focus();
 }
 
+/** Texto que se muestra al terminar de subir, según el estado del partido. */
+function mensajeTrasSubida(partido, duplicado) {
+    if (!duplicado) return 'Partido recibido. Te avisaremos cuando el análisis esté listo.';
+    return partido && partido.estado_analisis === 'completado'
+        ? 'Este partido ya está en tu historial, con su análisis completado.'
+        : 'Este partido ya está en tu historial y se está analizando.';
+}
+
 async function submitMatch() {
     const file = els.fileInput.files[0];
     if (!file) return;
@@ -131,14 +139,12 @@ async function submitMatch() {
     showProgress(0, 'Preparando subida...');
 
     try {
-        const { duplicado } = await uploadMatch(file, {
+        const { partido, duplicado } = await uploadMatch(file, {
             nombre: els.matchName.value,
             modalidad: els.matchType.value,
             onProgress: (pct) => showProgress(pct, `Subiendo partido... ${pct}% (no cierres la pestaña)`)
         });
-        showProgress(100, duplicado
-            ? 'Este vídeo ya estaba subido. No se vuelve a procesar.'
-            : 'Partido recibido. Te avisaremos cuando el análisis esté listo.');
+        showProgress(100, mensajeTrasSubida(partido, duplicado));
         els.details.classList.add('hidden');
         els.fileInput.value = '';
         await loadMatches();
