@@ -11,7 +11,10 @@ create table if not exists public.partidos (
     estado_analisis  text not null default 'pendiente'
                      check (estado_analisis in ('pendiente','procesando','completado','error')),
     resultados       jsonb,                   -- métricas, coordenadas, mapa de calor (lo escribe el worker)
-    created_at       timestamptz not null default now()
+    created_at       timestamptz not null default now(),
+    -- Coste de computación (Modal) acumulado, reintentos incluidos. Dato INTERNO: el cliente no puede leerlo.
+    modal_segundos   numeric(10,1) not null default 0,
+    modal_coste_usd  numeric(10,5) not null default 0
 );
 
 create index if not exists partidos_user_idx  on public.partidos (user_id, created_at desc);
@@ -24,8 +27,8 @@ create policy "ver propios partidos" on public.partidos
     for select using (auth.uid() = user_id);
 
 -- Pendiente de eliminar cuando la subida por el backend esté probada: solo el backend
--- (con la clave secreta) debería crear partidos. Hasta entonces, el navegador solo puede
--- crear filas 'pendiente' dentro de su propia carpeta.
+-- (con la clave secreta) debería crear partidos. Sin permiso INSERT para authenticated, esta política
+-- no tiene efecto; se deja como segunda barrera.
 create policy "crear partido pendiente" on public.partidos
     for insert with check (
         auth.uid() = user_id
@@ -54,8 +57,11 @@ create policy "ver mi perfil" on public.perfiles
 
 -- Permisos. Los proyectos nuevos de Supabase no conceden acceso a las tablas por defecto:
 -- sin estos GRANT, la API devuelve "permission denied" aunque las políticas RLS existan.
--- anon no tiene acceso. El navegador (authenticated) solo lee; escribe el backend (service_role).
-grant select on public.partidos to authenticated;
+-- anon no tiene acceso. El navegador (authenticated) solo lee, y en partidos solo las columnas de
+-- cliente (las columnas nuevas no se conceden solas, así que el coste interno queda oculto).
+-- Escribe el backend o el worker con service_role.
+grant select (id, user_id, nombre, modalidad, file_path, huella, tamano_bytes, estado_analisis, resultados, created_at)
+    on public.partidos to authenticated;
 grant select on public.perfiles to authenticated;
 grant select, insert, update, delete on public.partidos to service_role;
 grant select, insert, update, delete on public.perfiles to service_role;
