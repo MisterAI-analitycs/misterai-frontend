@@ -34,6 +34,16 @@
         <div id="contenido" class="hidden space-y-6">
             <section id="tarjetas" class="grid grid-cols-2 md:grid-cols-5 gap-3"></section>
 
+            <section class="p-4 bg-slate-950/60 border border-slate-900 rounded-2xl space-y-3">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xs font-bold tracking-wider uppercase text-slate-400">Jugadas destacadas</h2>
+                    <span class="text-[10px] text-slate-500">Disponibles 72 horas</span>
+                </div>
+                <div id="clips" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <p class="text-xs text-slate-500">Cargando clips...</p>
+                </div>
+            </section>
+
             <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="p-4 bg-slate-950/60 border border-slate-900 rounded-2xl space-y-3">
                     <h2 class="text-xs font-bold tracking-wider uppercase text-slate-400">Mapa de calor · Equipo A</h2>
@@ -60,14 +70,15 @@
 
             <p class="text-[11px] text-slate-500 leading-relaxed">
                 <i class="fa-solid fa-shield-halved text-emerald-500 mr-1"></i>
-                Por privacidad, el vídeo original se elimina del servidor al terminar el análisis; aquí se conservan solo los datos.
-                Resultados preliminares: la detección del balón y la separación de equipos pueden contener errores.
+                Por privacidad, el vídeo original se elimina del servidor al terminar el análisis; los clips se conservan 72 horas y,
+                después, solo quedan los datos. Resultados preliminares: la detección del balón y la separación de equipos pueden contener errores.
             </p>
         </div>
     </main>
 
     <script>
         const $ = (id) => document.getElementById(id);
+        let partidoActual = null;
 
         function tarjeta(titulo, valor, detalle) {
             return `<div class="p-4 bg-slate-950/60 border border-slate-900 rounded-2xl">
@@ -80,6 +91,11 @@
         function minSeg(s) {
             const m = Math.floor(s / 60), r = Math.round(s % 60);
             return m > 0 ? `${m} min ${r} s` : `${r} s`;
+        }
+
+        function reloj(s) {
+            const t = Math.max(0, Math.round(s));
+            return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
         }
 
         // Verde (poca presencia) -> amarillo -> rojo (mucha presencia)
@@ -118,6 +134,61 @@
             }
         }
 
+        async function descargarClip(url, nombre) {
+            try {
+                const blob = await (await fetch(url)).blob();
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = nombre;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+            } catch (e) {
+                alert('No se pudo descargar el clip. Inténtalo de nuevo.');
+            }
+        }
+
+        async function cargarClips() {
+            const cont = $('clips');
+            cont.innerHTML = '<p class="text-xs text-slate-500">Cargando clips...</p>';
+            try {
+                const { data: { session } } = await sb.auth.getSession();
+                const res = await fetch(`${MISTERAI_CONFIG.API_URL}/api/partidos/${encodeURIComponent(partidoActual.id)}/clips`, {
+                    headers: { Authorization: `Bearer ${session.access_token}` }
+                });
+                if (!res.ok) throw new Error(`Error ${res.status}`);
+                const { clips } = await res.json();
+                if (!clips.length) {
+                    cont.innerHTML = '<p class="text-xs text-slate-500">Los clips de este partido ya no están disponibles (se borran a las 72 horas) o no se generaron.</p>';
+                    return;
+                }
+                cont.innerHTML = clips.map((c, i) => {
+                    const hasta = new Date(c.expira).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                    return `<div class="space-y-2">
+                        <video controls preload="metadata" playsinline class="w-full rounded-xl bg-black border border-slate-900" src="${c.url}"></video>
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="min-w-0">
+                                <p class="text-xs font-semibold text-white truncate">${c.titulo || 'Jugada destacada'} · ${reloj(c.inicio_s)} – ${reloj(c.fin_s)}</p>
+                                <p class="text-[10px] text-slate-500">Disponible hasta el ${hasta}</p>
+                            </div>
+                            <button type="button" data-i="${i}" class="btn-descargar shrink-0 text-[11px] font-bold text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 rounded-lg px-2.5 py-1.5 cursor-pointer">
+                                <i class="fa-solid fa-download mr-1"></i>Descargar
+                            </button>
+                        </div>
+                    </div>`;
+                }).join('');
+                cont.querySelectorAll('.btn-descargar').forEach(btn => btn.addEventListener('click', () => {
+                    const c = clips[Number(btn.dataset.i)];
+                    descargarClip(c.url, `${partidoActual.nombre.replace(/[^\w-]+/g, '_')}_clip${c.n}.mp4`);
+                }));
+            } catch (e) {
+                cont.innerHTML = '<p class="text-xs text-slate-500">No se pudieron cargar los clips ahora (el servidor puede estar despertando). ' +
+                    '<button type="button" id="reintentar-clips" class="text-emerald-400 underline cursor-pointer">Reintentar</button></p>';
+                $('reintentar-clips').addEventListener('click', cargarClips);
+            }
+        }
+
         (async function () {
             const user = await protectRoute();
             if (!sb || !user) return;
@@ -129,6 +200,7 @@
                 .eq('id', id).maybeSingle();
 
             if (error || !p) { $('estado').textContent = 'No se encontró este partido.'; return; }
+            partidoActual = p;
             $('titulo').textContent = p.nombre;
             $('subtitulo').textContent = `${p.modalidad} · ${new Date(p.created_at).toLocaleDateString('es-ES')}`;
 
@@ -141,12 +213,15 @@
 
             const r = p.resultados, m = r.metricas || {}, a = r.equipos.a, b = r.equipos.b;
             const pa = a.posesion_pct || 0, pb = b.posesion_pct || 0, tot = pa + pb;
-            const fmt = (x) => tot > 0 ? `${Math.round((x / tot) * 100)} %` : '—';
             const balonPct = r.balon ? r.balon.detectado_pct : 0;
+            // Con el balón detectado en muy pocos fotogramas, la posesión no es fiable (puede salir 0 % / 100 %).
+            const posesionFiable = balonPct >= 20 && tot > 0;
+            const fmt = (x) => posesionFiable ? `${Math.round((x / tot) * 100)} %` : '—';
+            const detallePos = posesionFiable ? 'aproximada' : 'datos insuficientes';
 
             $('tarjetas').innerHTML =
-                tarjeta('Posesión A', fmt(pa), 'aproximada') +
-                tarjeta('Posesión B', fmt(pb), 'aproximada') +
+                tarjeta('Posesión A', fmt(pa), detallePos) +
+                tarjeta('Posesión B', fmt(pb), detallePos) +
                 tarjeta('Balón detectado', `${balonPct} %`, 'de los fotogramas') +
                 tarjeta('Tiempo analizado', minSeg(m.segundos_analizados || 0), `${m.frames_procesados || 0} fotogramas`) +
                 tarjeta('Procesado en', minSeg(m.tiempo_total_s || 0), m.modelo || '');
@@ -156,8 +231,8 @@
             $('nota-plano').textContent = r.plano === 'campo'
                 ? 'Posiciones sobre el campo (105 × 68 m), calibrado con las esquinas marcadas.'
                 : 'Posiciones sobre la imagen de la cámara: aún no se ha calibrado el campo, así que no es una vista desde arriba.';
-            if (balonPct < 20) {
-                $('nota-plano').textContent += ' El balón se detecta poco en este vídeo, por lo que la posesión es solo orientativa.';
+            if (!posesionFiable) {
+                $('nota-plano').textContent += ' El balón se detecta muy poco en este vídeo, así que no se muestra la posesión.';
             }
 
             $('tabla-jugadores').innerHTML = (r.jugadores || []).slice(0, 12).map(j => `
@@ -170,6 +245,7 @@
 
             $('estado').classList.add('hidden');
             $('contenido').classList.remove('hidden');
+            cargarClips();
         })();
     </script>
 </body>
