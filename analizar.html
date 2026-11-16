@@ -16,7 +16,7 @@
 </head>
 <body class="min-h-screen text-slate-100 font-sans antialiased">
 
-    <header class="h-16 border-b border-slate-900 bg-slate-950/80 backdrop-blur px-4 md:px-6 flex items-center justify-between sticky top-0 z-50">
+    <header class="h-16 border-b border-slate-900 bg-slate-950/80 backdrop-blur px-4 md:px-6 flex items-center justify-between gap-3 sticky top-0 z-50">
         <div class="flex items-center gap-4 min-w-0">
             <a href="dashboard.html" class="text-xs text-slate-400 hover:text-emerald-400 transition flex items-center gap-1.5 shrink-0">
                 <i class="fa-solid fa-arrow-left"></i> Volver al panel
@@ -26,13 +26,19 @@
                 <p id="subtitulo" class="text-[10px] text-emerald-400"></p>
             </div>
         </div>
+        <div id="admin-barra" class="hidden items-center gap-2 shrink-0">
+            <span id="badge-vista" class="hidden text-[10px] font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-md px-2 py-1">Vista previa de usuario</span>
+            <button id="btn-vista" type="button" class="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 rounded-lg px-2.5 py-1.5 cursor-pointer">
+                <i class="fa-solid fa-eye mr-1"></i><span id="btn-vista-txt">Ver como usuario</span>
+            </button>
+        </div>
     </header>
 
     <main class="max-w-5xl mx-auto p-4 md:p-8 space-y-6">
         <p id="estado" class="text-sm text-slate-400">Cargando análisis...</p>
 
         <div id="contenido" class="hidden space-y-6">
-            <section id="tarjetas" class="grid grid-cols-2 md:grid-cols-5 gap-3"></section>
+            <section id="tarjetas" class="grid grid-cols-2 md:grid-cols-3 gap-3"></section>
 
             <section class="p-4 bg-slate-950/60 border border-slate-900 rounded-2xl space-y-3">
                 <div class="flex items-center justify-between">
@@ -47,11 +53,11 @@
             <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="p-4 bg-slate-950/60 border border-slate-900 rounded-2xl space-y-3">
                     <h2 class="text-xs font-bold tracking-wider uppercase text-slate-400">Mapa de calor · Equipo A</h2>
-                    <canvas id="calor-a" width="624" height="408" class="w-full rounded-xl border border-slate-900"></canvas>
+                    <canvas id="calor-a" width="630" height="408" class="w-full rounded-xl border border-slate-900"></canvas>
                 </div>
                 <div class="p-4 bg-slate-950/60 border border-slate-900 rounded-2xl space-y-3">
                     <h2 class="text-xs font-bold tracking-wider uppercase text-slate-400">Mapa de calor · Equipo B</h2>
-                    <canvas id="calor-b" width="624" height="408" class="w-full rounded-xl border border-slate-900"></canvas>
+                    <canvas id="calor-b" width="630" height="408" class="w-full rounded-xl border border-slate-900"></canvas>
                 </div>
             </section>
             <p id="nota-plano" class="text-[11px] text-slate-500"></p>
@@ -79,6 +85,9 @@
     <script>
         const $ = (id) => document.getElementById(id);
         let partidoActual = null;
+        let datos = null;          // resultados ya procesados para pintar
+        let esAdmin = false;
+        let vistaUsuario = false;  // el administrador puede ver la página como la ve un usuario normal
 
         function tarjeta(titulo, valor, detalle) {
             return `<div class="p-4 bg-slate-950/60 border border-slate-900 rounded-2xl">
@@ -98,12 +107,74 @@
             return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
         }
 
+        // Tarjetas y notas. El administrador ve datos técnicos que los usuarios no ven.
+        function pintarResumen() {
+            const verAdmin = esAdmin && !vistaUsuario;
+            const { r, m, pa, pb, tot, balonPct, posesionFiable } = datos;
+            const fmt = (x) => posesionFiable ? `${Math.round((x / tot) * 100)} %` : '—';
+            const detallePos = posesionFiable ? 'aproximada' : 'datos insuficientes';
+
+            let html = tarjeta('Posesión A', fmt(pa), detallePos) + tarjeta('Posesión B', fmt(pb), detallePos) +
+                tarjeta('Tiempo analizado', minSeg(m.segundos_analizados || 0), `${m.frames_procesados || 0} fotogramas`);
+            if (verAdmin) {
+                html += tarjeta('Balón detectado', `${balonPct} %`, 'de los fotogramas') +
+                    tarjeta('Procesado en', minSeg(m.tiempo_total_s || 0), m.modelo || '');
+            }
+            $('tarjetas').innerHTML = html;
+            $('tarjetas').className = 'grid grid-cols-2 gap-3 ' + (verAdmin ? 'md:grid-cols-5' : 'md:grid-cols-3');
+
+            let nota = r.plano === 'campo'
+                ? 'Posiciones sobre el campo (105 × 68 m), calibrado con las esquinas marcadas.'
+                : 'Vista aproximada: el campo aún no está calibrado, así que se ajusta la imagen de la cámara al campo y las posiciones no son exactas.';
+            if (!posesionFiable) {
+                nota += verAdmin
+                    ? ` Balón detectado en solo el ${balonPct} % de los fotogramas: no se muestra la posesión.`
+                    : ' No hay datos suficientes para calcular la posesión en este vídeo.';
+            }
+            $('nota-plano').textContent = nota;
+
+            $('badge-vista').classList.toggle('hidden', !(esAdmin && vistaUsuario));
+            $('btn-vista-txt').textContent = vistaUsuario ? 'Volver a vista de administrador' : 'Ver como usuario';
+        }
+
         // Verde (poca presencia) -> amarillo -> rojo (mucha presencia)
         function colorCalor(v) {
             return [Math.round(255 * Math.min(1, v * 2)), Math.round(255 * Math.min(1, 2 - 2 * v)), 40];
         }
 
-        function dibujarCalor(canvas, grid, plano) {
+        // Dibuja un campo de fútbol de 105 x 68 m con sus líneas, escalado al canvas con un margen.
+        function dibujarCampo(ctx, w, h, m) {
+            const sx = (w - 2 * m) / 105, sy = (h - 2 * m) / 68;
+            const X = (x) => m + x * sx, Y = (y) => m + y * sy;
+            ctx.fillStyle = '#0a2a17';
+            ctx.fillRect(0, 0, w, h);
+            for (let i = 0; i < 10; i += 2) {           // franjas de césped
+                ctx.fillStyle = 'rgba(255,255,255,0.025)';
+                ctx.fillRect(X(i * 10.5), Y(0), 10.5 * sx, 68 * sy);
+            }
+            return { sx, sy, X, Y };
+        }
+
+        function dibujarLineas(ctx, g) {
+            const { sx, sy, X, Y } = g;
+            ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            ctx.lineWidth = 1.5;
+            const el = (cx, cy, rx, ry, a0 = 0, a1 = Math.PI * 2) => { ctx.beginPath(); ctx.ellipse(X(cx), Y(cy), rx * sx, ry * sy, 0, a0, a1); ctx.stroke(); };
+            ctx.strokeRect(X(0), Y(0), 105 * sx, 68 * sy);                          // perímetro
+            ctx.beginPath(); ctx.moveTo(X(52.5), Y(0)); ctx.lineTo(X(52.5), Y(68)); ctx.stroke();  // línea de medio campo
+            el(52.5, 34, 9.15, 9.15);                                              // círculo central
+            [[0, 1], [88.5, 1]].forEach(([x]) => ctx.strokeRect(X(x), Y(13.84), 16.5 * sx, 40.32 * sy));   // áreas grandes
+            [[0], [99.5]].forEach(([x]) => ctx.strokeRect(X(x), Y(24.84), 5.5 * sx, 18.32 * sy));         // áreas pequeñas
+            const arco = Math.acos((16.5 - 11) / 9.15);                             // arcos de área
+            el(11, 34, 9.15, 9.15, -arco, arco);
+            el(94, 34, 9.15, 9.15, Math.PI - arco, Math.PI + arco);
+            [[52.5, 34], [11, 34], [94, 34]].forEach(([x, y]) => {                  // puntos centrales y de penalti
+                ctx.beginPath(); ctx.arc(X(x), Y(y), 2.2, 0, Math.PI * 2); ctx.fill();
+            });
+        }
+
+        function dibujarCalor(canvas, grid) {
             const filas = grid.length, cols = grid[0].length;
             const pequeno = document.createElement('canvas');
             pequeno.width = cols; pequeno.height = filas;
@@ -114,24 +185,16 @@
                     const v = grid[y][x] / 100, i = (y * cols + x) * 4;
                     const [r, g, b] = colorCalor(v);
                     img.data[i] = r; img.data[i + 1] = g; img.data[i + 2] = b;
-                    img.data[i + 3] = v < 0.03 ? 0 : Math.round(70 + 185 * v);
+                    img.data[i + 3] = v < 0.03 ? 0 : Math.round(80 + 175 * v);
                 }
             }
             sctx.putImageData(img, 0, 0);
 
-            const ctx = canvas.getContext('2d'), w = canvas.width, h = canvas.height;
-            ctx.fillStyle = '#04160f';
-            ctx.fillRect(0, 0, w, h);
+            const ctx = canvas.getContext('2d'), w = canvas.width, h = canvas.height, m = 14;
+            const g = dibujarCampo(ctx, w, h, m);
             ctx.imageSmoothingEnabled = true;
-            ctx.drawImage(pequeno, 0, 0, w, h);
-
-            ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(1, 1, w - 2, h - 2);
-            if (plano === 'campo') {
-                ctx.beginPath(); ctx.moveTo(w / 2, 0); ctx.lineTo(w / 2, h); ctx.stroke();
-                ctx.beginPath(); ctx.arc(w / 2, h / 2, h * 0.135, 0, Math.PI * 2); ctx.stroke();
-            }
+            ctx.drawImage(pequeno, g.X(0), g.Y(0), 105 * g.sx, 68 * g.sy);        // el calor ocupa el campo
+            dibujarLineas(ctx, g);
         }
 
         async function descargarClip(url, nombre) {
@@ -152,11 +215,16 @@
         async function cargarClips() {
             const cont = $('clips');
             cont.innerHTML = '<p class="text-xs text-slate-500">Cargando clips...</p>';
+            // El servidor gratuito puede estar dormido: tras unos segundos se avisa de que está despertando.
+            const aviso = setTimeout(() => {
+                cont.innerHTML = '<p class="text-xs text-slate-500">El servidor está despertando; puede tardar hasta un minuto...</p>';
+            }, 6000);
             try {
                 const { data: { session } } = await sb.auth.getSession();
                 const res = await fetch(`${MISTERAI_CONFIG.API_URL}/api/partidos/${encodeURIComponent(partidoActual.id)}/clips`, {
                     headers: { Authorization: `Bearer ${session.access_token}` }
                 });
+                clearTimeout(aviso);
                 if (!res.ok) throw new Error(`Error ${res.status}`);
                 const { clips } = await res.json();
                 if (!clips.length) {
@@ -183,7 +251,8 @@
                     descargarClip(c.url, `${partidoActual.nombre.replace(/[^\w-]+/g, '_')}_clip${c.n}.mp4`);
                 }));
             } catch (e) {
-                cont.innerHTML = '<p class="text-xs text-slate-500">No se pudieron cargar los clips ahora (el servidor puede estar despertando). ' +
+                clearTimeout(aviso);
+                cont.innerHTML = '<p class="text-xs text-slate-500">No se pudieron cargar los clips ahora. ' +
                     '<button type="button" id="reintentar-clips" class="text-emerald-400 underline cursor-pointer">Reintentar</button></p>';
                 $('reintentar-clips').addEventListener('click', cargarClips);
             }
@@ -194,6 +263,15 @@
             if (!sb || !user) return;
             const id = new URLSearchParams(window.location.search).get('id');
             if (!id) { window.location.href = pageUrl('dashboard.html'); return; }
+
+            // Rol del usuario (la tabla perfiles solo deja leer el propio)
+            const { data: perfil } = await sb.from('perfiles').select('rol').eq('id', user.id).maybeSingle();
+            esAdmin = !!perfil && perfil.rol === 'admin';
+            if (esAdmin) {
+                $('admin-barra').classList.remove('hidden');
+                $('admin-barra').classList.add('flex');
+                $('btn-vista').addEventListener('click', () => { vistaUsuario = !vistaUsuario; if (datos) pintarResumen(); });
+            }
 
             const { data: p, error } = await sb.from('partidos')
                 .select('id, nombre, modalidad, estado_analisis, created_at, resultados')
@@ -211,29 +289,15 @@
                 return;
             }
 
-            const r = p.resultados, m = r.metricas || {}, a = r.equipos.a, b = r.equipos.b;
+            const r = p.resultados, a = r.equipos.a, b = r.equipos.b;
             const pa = a.posesion_pct || 0, pb = b.posesion_pct || 0, tot = pa + pb;
             const balonPct = r.balon ? r.balon.detectado_pct : 0;
             // Con el balón detectado en muy pocos fotogramas, la posesión no es fiable (puede salir 0 % / 100 %).
-            const posesionFiable = balonPct >= 20 && tot > 0;
-            const fmt = (x) => posesionFiable ? `${Math.round((x / tot) * 100)} %` : '—';
-            const detallePos = posesionFiable ? 'aproximada' : 'datos insuficientes';
+            datos = { r, m: r.metricas || {}, pa, pb, tot, balonPct, posesionFiable: balonPct >= 20 && tot > 0 };
 
-            $('tarjetas').innerHTML =
-                tarjeta('Posesión A', fmt(pa), detallePos) +
-                tarjeta('Posesión B', fmt(pb), detallePos) +
-                tarjeta('Balón detectado', `${balonPct} %`, 'de los fotogramas') +
-                tarjeta('Tiempo analizado', minSeg(m.segundos_analizados || 0), `${m.frames_procesados || 0} fotogramas`) +
-                tarjeta('Procesado en', minSeg(m.tiempo_total_s || 0), m.modelo || '');
-
-            dibujarCalor($('calor-a'), a.mapa_calor, r.plano);
-            dibujarCalor($('calor-b'), b.mapa_calor, r.plano);
-            $('nota-plano').textContent = r.plano === 'campo'
-                ? 'Posiciones sobre el campo (105 × 68 m), calibrado con las esquinas marcadas.'
-                : 'Posiciones sobre la imagen de la cámara: aún no se ha calibrado el campo, así que no es una vista desde arriba.';
-            if (!posesionFiable) {
-                $('nota-plano').textContent += ' El balón se detecta muy poco en este vídeo, así que no se muestra la posesión.';
-            }
+            pintarResumen();
+            dibujarCalor($('calor-a'), a.mapa_calor);
+            dibujarCalor($('calor-b'), b.mapa_calor);
 
             $('tabla-jugadores').innerHTML = (r.jugadores || []).slice(0, 12).map(j => `
                 <tr class="border-t border-slate-900">
