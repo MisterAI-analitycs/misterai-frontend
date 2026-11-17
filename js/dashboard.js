@@ -1,5 +1,5 @@
 // dashboard.js - Panel del entrenador: subida de partidos y listado del historial
-// Requiere cargar antes: supabase-js, js/config.js, js/auth.js y js/upload.js
+// Requiere cargar antes: supabase-js, js/config.js, js/auth.js, js/avatares.js y js/upload.js
 
 const $ = (id) => document.getElementById(id);
 
@@ -174,6 +174,19 @@ function setupDragAndDrop() {
     els.fileInput.addEventListener('change', setupFile);
 }
 
+/** Escudo y nombre del equipo en la cabecera; al pulsar el escudo se abren los ajustes de perfil. */
+async function cargarPerfil(user) {
+    const { data: perfil } = await sb.from('perfiles').select('avatar, equipo_nombre').eq('id', user.id).maybeSingle();
+    const chip = $('chip-equipo');
+    if (chip && perfil && perfil.equipo_nombre) chip.textContent = perfil.equipo_nombre;
+    if (els.userBadge) {
+        els.userBadge.title = 'Ajustes de perfil';
+        els.userBadge.style.cursor = 'pointer';
+        els.userBadge.addEventListener('click', () => { window.location.href = pageUrl('ajustes.html'); });
+        if (perfil && perfil.avatar) els.userBadge.innerHTML = avatarSvg(perfil.avatar, 26);
+    }
+}
+
 (async function init() {
     setupDragAndDrop();
     els.submit.addEventListener('click', submitMatch);
@@ -183,7 +196,7 @@ function setupDragAndDrop() {
     if (user && els.userBadge) {
         const name = user.user_metadata?.display_name || user.email || 'Míster';
         els.userBadge.textContent = name.slice(0, 2).toUpperCase();
-        els.userBadge.title = name;
+        await cargarPerfil(user);
     }
     await loadMatches();
 })();
