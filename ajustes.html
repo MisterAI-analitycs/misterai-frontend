@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"><meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="css/favicon.svg">
+    <title>Ajustes de perfil - MisterAI</title>
+    <link rel="stylesheet" href="css/tailwind.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #020617; background-image: radial-gradient(circle at 50% 0%, #042f1a 0%, #020617 70%); }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/avatares.js"></script>
+</head>
+<body class="min-h-screen text-slate-100 font-sans antialiased">
+
+    <header class="h-16 border-b border-slate-900 bg-slate-950/80 backdrop-blur px-4 md:px-6 flex items-center justify-between sticky top-0 z-50">
+        <a href="dashboard.html" class="text-xs text-slate-400 hover:text-emerald-400 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-arrow-left"></i> Volver al panel
+        </a>
+        <h1 class="text-sm font-bold text-white">Ajustes de perfil</h1>
+        <button id="btn-salir" type="button" class="text-xs text-slate-400 hover:text-white transition cursor-pointer">
+            <i class="fa-solid fa-right-from-bracket mr-1"></i>Cerrar sesión
+        </button>
+    </header>
+
+    <main class="max-w-2xl mx-auto p-4 md:p-8 space-y-6">
+        <section class="p-5 bg-slate-950/60 border border-slate-900 rounded-2xl space-y-4">
+            <h2 class="text-xs font-bold tracking-wider uppercase text-slate-400">Escudo</h2>
+            <div class="flex items-center gap-4">
+                <div id="avatar-actual" class="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center"></div>
+                <p class="text-xs text-slate-400 leading-relaxed">Elige el escudo que te representa en el panel. Son escudos de MisterAI: no se pueden subir fotos.</p>
+            </div>
+            <div id="rejilla-avatares" class="grid grid-cols-5 sm:grid-cols-6 gap-2"></div>
+        </section>
+
+        <section class="p-5 bg-slate-950/60 border border-slate-900 rounded-2xl space-y-4">
+            <h2 class="text-xs font-bold tracking-wider uppercase text-slate-400">Equipo</h2>
+            <div class="space-y-1.5">
+                <label for="equipo" class="text-[10px] font-bold tracking-wider uppercase text-slate-400">Nombre del equipo o cuerpo técnico</label>
+                <input id="equipo" type="text" maxlength="40" placeholder="Ej. C.D. Santa María Juvenil A"
+                    class="w-full h-10 bg-slate-900 border border-slate-800 rounded-xl px-3.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition">
+                <p class="text-[10px] text-slate-500">Aparece en la cabecera de tu panel. Máximo 40 caracteres.</p>
+            </div>
+            <div class="space-y-1.5">
+                <label class="text-[10px] font-bold tracking-wider uppercase text-slate-400">Correo de la cuenta</label>
+                <p id="correo" class="text-xs text-slate-300"></p>
+            </div>
+            <button id="btn-guardar" type="button" class="w-full h-10 bg-emerald-500 hover:bg-emerald-400 font-bold text-xs text-slate-950 rounded-xl transition cursor-pointer">
+                Guardar cambios
+            </button>
+        </section>
+    </main>
+
+    <script>
+        const $ = (id) => document.getElementById(id);
+        let usuario = null;
+        let avatarElegido = null;
+
+        function pintarSeleccion() {
+            $('avatar-actual').innerHTML = avatarElegido ? avatarSvg(avatarElegido, 52) : '<i class="fa-solid fa-shield text-slate-600 text-2xl"></i>';
+            document.querySelectorAll('.opcion-avatar').forEach(b => {
+                const activo = Number(b.dataset.n) === avatarElegido;
+                b.classList.toggle('border-emerald-400', activo);
+                b.classList.toggle('bg-emerald-500/10', activo);
+                b.classList.toggle('border-slate-800', !activo);
+            });
+        }
+
+        function pintarRejilla() {
+            let html = '';
+            for (let n = 1; n <= AVATAR_TOTAL; n++) {
+                html += `<button type="button" data-n="${n}" class="opcion-avatar flex items-center justify-center p-1.5 rounded-xl border border-slate-800 hover:border-emerald-500/50 transition cursor-pointer" aria-label="Escudo ${n}">${avatarSvg(n, 40)}</button>`;
+            }
+            $('rejilla-avatares').innerHTML = html;
+            document.querySelectorAll('.opcion-avatar').forEach(b => b.addEventListener('click', () => {
+                avatarElegido = Number(b.dataset.n);
+                pintarSeleccion();
+            }));
+        }
+
+        async function guardar() {
+            const btn = $('btn-guardar');
+            btn.disabled = true;
+            const { error } = await sb.from('perfiles')
+                .update({ avatar: avatarElegido, equipo_nombre: $('equipo').value.trim() || null })
+                .eq('id', usuario.id);
+            btn.disabled = false;
+            if (error) { showToast(`No se pudo guardar: ${error.message}`, 'error'); return; }
+            showToast('Cambios guardados.', 'success');
+        }
+
+        (async function () {
+            usuario = await protectRoute();
+            if (!sb || !usuario) return;
+            $('btn-salir').addEventListener('click', logoutMister);
+            $('correo').textContent = usuario.email || '';
+            pintarRejilla();
+
+            const { data: perfil } = await sb.from('perfiles').select('avatar, equipo_nombre').eq('id', usuario.id).maybeSingle();
+            if (perfil) {
+                avatarElegido = perfil.avatar || null;
+                $('equipo').value = perfil.equipo_nombre || '';
+            }
+            pintarSeleccion();
+            $('btn-guardar').addEventListener('click', guardar);
+        })();
+    </script>
+</body>
+</html>
